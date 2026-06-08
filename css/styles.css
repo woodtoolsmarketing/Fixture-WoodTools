@@ -59,6 +59,8 @@ body::before {
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 2;
 }
 
 /* Logo WoodTools (arriba a la izquierda) */
@@ -100,14 +102,15 @@ body::before {
   position: absolute;
   width: 78px;
   height: 78px;
-  opacity: .9;
+  opacity: .15;
+  z-index: 0;
   pointer-events: none;
   object-fit: contain;
 }
-.deco-tool--tl { top: 8px;    left: 8px;    transform: rotate(-12deg); }
-.deco-tool--tr { top: 8px;    right: 8px;   transform: rotate(12deg); }
-.deco-tool--bl { bottom: 8px; left: 8px;    transform: rotate(8deg); }
-.deco-tool--br { bottom: 8px; right: 8px;   transform: rotate(-8deg); }
+.deco-tool--tl { top: -10px;    left: 18%;    transform: rotate(-12deg); }
+.deco-tool--tr { top: -10px;    right: 5%;    transform: rotate(12deg); }
+.deco-tool--bl { bottom: -10px; left: 45%;    transform: rotate(8deg); }
+.deco-tool--br { bottom: -10px; right: 20%;   transform: rotate(-8deg); }
 
 /* ===== NAVEGACIÓN ENTRE PÁGINAS + PARTES ================================ */
 .toolbar {

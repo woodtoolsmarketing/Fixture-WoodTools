@@ -1,18 +1,13 @@
 /* =========================================================================
    WoodTools · Fixture Mundial 2026
    predictor.js  ·  Página PREDICTOR — simulador del torneo.
-   ---------------------------------------------------------------------------
-   · Cargás los goles de la fase de grupos.
-   · La tabla calcula sola 1.º, 2.º y los 8 MEJORES TERCEROS que clasifican.
-   · En dieciseisavos elegís qué tercero ocupa cada lugar.
-   · Los ganadores de cada llave avanzan automáticamente hasta la final.
-   · En caso de empate definís quién pasa por penales.
    ========================================================================= */
 (function () {
   'use strict';
 
   const KEY = 'wt-predictor-v1';
   const state = loadState();
+  
   function loadState() {
     let s = {};
     try { s = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
@@ -20,8 +15,9 @@
       gs:    s.gs    || {},   // goles de grupos          g-A-0-h / g-A-0-a
       ks:    s.ks    || {},   // goles de eliminatorias   m73-h / m73-a
       pen:   s.pen   || {},   // ganador por penales      m89 -> 'home'|'away'
-      third: s.third || {},   // mejor 3.º elegido         75 -> 'B'
-      flags: s.flags || {}    // banderas varias           { finalPen: true }
+      third: s.third || {},   // mapping automático:      '75-a' -> 'B'
+      flags: s.flags || {},   // banderas varias           { finalPen: true }
+      lastThirdsStr: s.lastThirdsStr || '' // guarda el set actual de 3.º
     };
   }
   const save = () => localStorage.setItem(KEY, JSON.stringify(state));
@@ -43,23 +39,19 @@
     else { img.removeAttribute('src'); img.style.opacity = '0'; }
   }
 
-  // Input de goles (solo números, sin flechitas) ligado a un mapa del estado;
-  // al escribir recalcula todo el cuadro.
   function scoreInput(map, id) {
     return WT.numInput({ value: map[id], onChange: v => { map[id] = v; save(); update(); } });
   }
 
   /* =====================================================================
-     REGISTROS de DOM (se crean una vez y se refrescan en update())
+     REGISTROS de DOM
      ===================================================================== */
-  const groupReg = [];   // { g, tbody }
-  const koReg = [];      // { n, sides:{home,away}, penWrap, penHome, penAway } en orden de rondas
-  let finalReg = null;   // refs de la final
-
-  const thirdDefs = []; // { n, eligible:[grupos] } de cada llave que recibe un "mejor 3.º"
+  const groupReg = [];   
+  const koReg = [];      
+  let finalReg = null;   
 
   /* =====================================================================
-     1) FASE DE GRUPOS — tarjeta con marcadores + tabla viva
+     1) FASE DE GRUPOS
      ===================================================================== */
   function renderGroup(g) {
     const card = el('div', { class: 'group-card' });
@@ -68,7 +60,6 @@
       el('div', {}, [ el('h3', { html: 'GRUPO ' + g.id + '<small>Tabla en vivo</small>' }) ])
     ]));
 
-    // Tabla de posiciones (cuerpo que se refresca en update())
     const table = el('table', { class: 'standings' });
     table.appendChild(el('thead', { html:
       '<tr><th>#</th><th>Selección</th><th>PJ</th><th>DG</th><th>Pts</th></tr>' }));
@@ -77,7 +68,6 @@
     card.appendChild(table);
     groupReg.push({ g, tbody });
 
-    // Partidos con marcador
     const wrap = el('div', { class: 'matches' });
     [1, 2, 3].forEach(f => {
       wrap.appendChild(el('div', { class: 'fecha-label' }, [f + '.ª FECHA']));
@@ -100,7 +90,7 @@
   }
 
   /* =====================================================================
-     2) CÁLCULO DE TABLAS Y MEJORES TERCEROS
+     2) CÁLCULO DE TABLAS
      ===================================================================== */
   function computeStanding(g) {
     const stat = {};
@@ -148,9 +138,8 @@
   }
 
   /* =====================================================================
-     3) LLAVES — construcción del DOM
+     3) LLAVES (Sin selects, texto automático)
      ===================================================================== */
-  // Crea un lado de llave. Devuelve un objeto "side" con sus referencias DOM.
   function buildSide(match, who, ref) {
     const refInfo = WT.parseRef(ref);
     const isThird = refInfo.type === 'third';
@@ -162,31 +151,15 @@
     const img = el('img', { alt: '' }); img.style.opacity = '0';
     flag.appendChild(img); team.appendChild(flag);
 
-    let select = null;
     const nameEl = el('span', { class: 'tname tname--empty' }, ['—']);
-
-    if (isThird) {
-      thirdSlots.push(match.n);
-      select = el('select', { class: 'third-select', 'aria-label': 'Elegí el mejor 3.º' });
-      select.addEventListener('change', () => {
-        const g = select.value;
-        // el tercero es único: si ya estaba en otra llave, se lo saca de ahí
-        if (g) thirdSlots.forEach(k => { if (k !== match.n && state.third[k] === g) state.third[k] = ''; });
-        state.third[match.n] = g;
-        save(); update();
-      });
-      team.appendChild(select);
-      // para terceros el <select> ya muestra el equipo: no repetimos el nombre
-    } else {
-      team.appendChild(nameEl);
-    }
+    team.appendChild(nameEl);
     side.appendChild(team);
 
     const sc = el('div', { class: 'ko-score' });
     sc.appendChild(scoreInput(state.ks, 'm' + match.n + '-' + (who === 'home' ? 'h' : 'a')));
     side.appendChild(sc);
 
-    return { who, ref, refInfo, isThird, eligible: refInfo.groups || [], n: match.n, sideEl: side, img, nameEl, select };
+    return { who, ref, refInfo, isThird, n: match.n, sideEl: side, img, nameEl };
   }
 
   function buildKoCard(match) {
@@ -200,7 +173,6 @@
     card.appendChild(home.sideEl);
     card.appendChild(away.sideEl);
 
-    // Controles de penales (se muestran solo si hay empate)
     const penWrap = el('div', { class: 'pen-note' });
     penWrap.style.display = 'none';
     const penHome = el('button', { class: 'ko-pick', type: 'button' }, ['⚽ Pasa local']);
@@ -242,11 +214,9 @@
       f.appendChild(el('span', { class: 'ref-tag' }, [ref]));
       const nameEl = el('span', { class: 'finalist-name tname--empty' }, ['—']);
       f.appendChild(nameEl);
-      // Resultado DEBAJO del nombre
       const fs = el('div', { class: 'finalist-score' });
       fs.appendChild(scoreInput(state.ks, 'mF-' + who));
       f.appendChild(fs);
-      // Penales (debajo del resultado)
       const pen = el('div', { class: 'finalist-pen' });
       pen.appendChild(el('span', { class: 'pen-cap' }, ['Penales']));
       pen.appendChild(scoreInput(state.ks, 'mF-' + who + '-pen'));
@@ -257,7 +227,6 @@
     const home = finalist(F.home, 'h');
     stage.appendChild(home.f);
 
-    // Hueco central para la copa del mundo
     const slot = el('div', { class: 'trophy-slot' });
     slot.appendChild(el('img', { src: 'imagenes/Copa-del-mundo.png', alt: 'Copa del Mundo' }));
     slot.appendChild(el('span', { class: 'vs' }, ['VS']));
@@ -267,7 +236,6 @@
     stage.appendChild(away.f);
     card.appendChild(stage);
 
-    // Opción "Se define por penales"
     const toggle = el('label', { class: 'pen-toggle' });
     const chk = el('input', { type: 'checkbox' });
     if (state.flags.finalPen) { chk.checked = true; card.classList.add('show-pen'); }
@@ -280,7 +248,6 @@
     toggle.appendChild(document.createTextNode('Se define por penales'));
     card.appendChild(toggle);
 
-    // Campeón
     const champ = el('div', { class: 'champion empty' });
     const champLabel = el('span', {}, ['Cargá el resultado de la final']);
     const champName = el('span', { class: 'champion-name' }, ['']);
@@ -292,10 +259,9 @@
   }
 
   /* =====================================================================
-     5) ACTUALIZACIÓN GLOBAL (corazón del simulador)
+     5) ACTUALIZACIÓN GLOBAL 
      ===================================================================== */
   function update() {
-    // a) tablas de grupos + mejores terceros
     const standings = {};
     WT.GROUPS.forEach(g => standings[g.id] = computeStanding(g));
     const thirds = computeThirds(standings);
@@ -303,7 +269,22 @@
 
     const thirdTeamOf = grp => standings[grp][2].team;
 
-    // b) resolución progresiva de ganadores/perdedores
+    // --- REPARTICIÓN ALEATORIA AUTOMÁTICA DE LOS MEJORES 8 TERCEROS ---
+    // Chequeamos si el set de 8 clasificados es distinto al último que guardamos.
+    const currentThirdsStr = thirds.qualified.map(t => t.group).sort().join('');
+    if (state.lastThirdsStr !== currentThirdsStr || Object.keys(state.third).length === 0) {
+      state.lastThirdsStr = currentThirdsStr;
+      
+      // Mezclamos al azar y los asignamos a los 8 slots de dieciseisavos
+      const shuffled = thirds.qualified.map(t => t.group).sort(() => Math.random() - 0.5);
+      let i = 0;
+      state.third = {};
+      koReg.forEach(entry => {
+        if (entry.home.isThird) state.third[entry.n + '-h'] = shuffled[i++];
+        if (entry.away.isThird) state.third[entry.n + '-a'] = shuffled[i++];
+      });
+    }
+
     const winner = {}, loser = {};
     function resolveRef(ref) {
       const p = WT.parseRef(ref);
@@ -314,26 +295,10 @@
       return null;
     }
 
-    // Resuelve un lado tipo "mejor 3.º": refresca opciones del <select> y devuelve la selección.
+    // El tercero se resuelve leyendo el mapeo aleatorio que quedó guardado
     function resolveThird(side) {
-      let cur = state.third[side.n] || '';
-      const curValid = cur && thirds.groups.has(cur) && side.eligible.includes(cur);
-      if (cur && !curValid) { cur = ''; state.third[side.n] = ''; }
-
-      // opciones = todos los terceros clasificados elegibles para este cruce
-      // (la unicidad se garantiza al elegir, liberándolo de la otra llave)
-      const opts = thirds.qualified
-        .filter(t => side.eligible.includes(t.group))
-        .map(t => t.group);
-
-      const sel = side.select;
-      sel.innerHTML = '';
-      sel.appendChild(el('option', { value: '' }, ['Elegí 3.º…']));
-      opts.forEach(grp => {
-        sel.appendChild(el('option', { value: grp }, ['Gr. ' + grp + ' · ' + thirdTeamOf(grp)]));
-      });
-      sel.value = cur;
-      return cur ? thirdTeamOf(cur) : null;
+      const g = state.third[side.n + '-' + side.who.charAt(0)];
+      return g ? thirdTeamOf(g) : null;
     }
 
     function decide(n, homeTeam, awayTeam) {
@@ -361,7 +326,6 @@
       side.sideEl.classList.toggle('win', !!isWinner);
     }
 
-    // recorre las llaves EN ORDEN (r32 → r16 → qf → sf → 3.º → final ya cargados en koReg)
     koReg.forEach(entry => {
       const homeTeam = entry.home.isThird ? resolveThird(entry.home) : resolveRef(entry.home.ref);
       const awayTeam = entry.away.isThird ? resolveThird(entry.away) : resolveRef(entry.away.ref);
@@ -369,7 +333,6 @@
       paintSide(entry.home, homeTeam, res.w && res.w === homeTeam);
       paintSide(entry.away, awayTeam, res.w && res.w === awayTeam);
 
-      // penales
       if (res.draw) {
         entry.penWrap.style.display = '';
         entry.penHome.textContent = '⚽ Pasa ' + (homeTeam || 'local');
@@ -381,7 +344,6 @@
       }
     });
 
-    // c) FINAL — el campeón sale por goles, o por penales si está tildada la opción.
     const F = WT.FINAL;
     const homeT = resolveRef(F.home);
     const awayT = resolveRef(F.away);
@@ -421,7 +383,7 @@
   }
 
   /* =====================================================================
-     6) NAVEGACIÓN, RESET E INICIO
+     6) NAVEGACIÓN E INICIO
      ===================================================================== */
   function setupTabs() {
     const tabs = document.querySelectorAll('#tabs .tab-btn');
@@ -440,7 +402,6 @@
     }
   });
 
-  // --- construcción ---
   WT.GROUPS.slice(0, 6).forEach(g => document.getElementById('groups-1').appendChild(renderGroup(g)));
   WT.GROUPS.slice(6).forEach(g => document.getElementById('groups-2').appendChild(renderGroup(g)));
   renderRound('round-r32', WT.R32);
