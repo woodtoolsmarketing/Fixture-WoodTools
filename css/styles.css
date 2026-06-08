@@ -1,0 +1,585 @@
+/* =========================================================================
+   WoodTools · Fixture Mundial 2026
+   styles.css  ·  Hoja de estilos COMPARTIDA por fixture.html y predictor.html
+   ========================================================================= */
+
+:root {
+  --wt-red:        #970a11;
+  --wt-red-dark:   #6f070c;
+  --wt-gold:       #e4b53d;
+  --wt-ink:        #20140f;
+  --wt-paper:      #fbf7f2;
+  --wt-card:       #ffffff;
+  --wt-line:       #e7ddd2;
+  --wt-muted:      #8a7d72;
+  --wt-green:      #1f8a4c;
+  --radius:        14px;
+  --shadow:        0 10px 30px rgba(0, 0, 0, .14);
+  --shadow-sm:     0 3px 10px rgba(0, 0, 0, .10);
+}
+
+* { box-sizing: border-box; }
+
+html { background: #ffffff; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--wt-ink);
+  line-height: 1.4;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ---- Fondo: color #970a11 con 60% de opacidad ------------------------- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-color: #970a11;
+  opacity: .60;
+  z-index: -1;
+}
+
+/* ===== ENCABEZADO ======================================================= */
+.site-header {
+  position: relative;
+  max-width: 1280px;
+  margin: 18px auto 0;
+  padding: 22px 26px;
+  background: linear-gradient(135deg, var(--wt-red) 0%, var(--wt-red-dark) 100%);
+  color: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.site-header__row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* Logo WoodTools (arriba a la izquierda) */
+.brand-logo {
+  width: 96px;
+  height: 96px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.brand-logo img { width: 100%; height: 100%; object-fit: contain; }
+
+.site-header__titles { flex: 1 1 280px; min-width: 240px; }
+.site-header__kicker {
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  font-size: .72rem;
+  opacity: .85;
+  margin: 0 0 4px;
+}
+.site-header h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.6vw, 2.4rem);
+  line-height: 1.05;
+  font-weight: 800;
+}
+.site-header__sub {
+  margin: 8px 0 0;
+  font-size: .9rem;
+  opacity: .92;
+}
+
+/* Herramientas decorativas en las 4 esquinas del encabezado */
+.deco-tool {
+  position: absolute;
+  width: 78px;
+  height: 78px;
+  opacity: .9;
+  pointer-events: none;
+  object-fit: contain;
+}
+.deco-tool--tl { top: 8px;    left: 8px;    transform: rotate(-12deg); }
+.deco-tool--tr { top: 8px;    right: 8px;   transform: rotate(12deg); }
+.deco-tool--bl { bottom: 8px; left: 8px;    transform: rotate(8deg); }
+.deco-tool--br { bottom: 8px; right: 8px;   transform: rotate(-8deg); }
+
+/* ===== NAVEGACIÓN ENTRE PÁGINAS + PARTES ================================ */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  max-width: 1280px;
+  margin: 14px auto;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(6px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar__group { display: flex; flex-wrap: wrap; gap: 8px; }
+.toolbar__spacer { flex: 1 1 auto; }
+
+.tab-btn, .page-link, .btn {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--wt-line);
+  background: #fff;
+  color: var(--wt-ink);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: .85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all .15s ease;
+  white-space: nowrap;
+}
+.tab-btn:hover, .page-link:hover, .btn:hover { border-color: var(--wt-red); color: var(--wt-red); }
+.tab-btn.active { background: var(--wt-red); border-color: var(--wt-red); color: #fff; }
+
+.page-link.current { background: var(--wt-ink); border-color: var(--wt-ink); color: #fff; cursor: default; }
+.btn--ghost { background: transparent; }
+.btn--danger:hover { border-color: var(--wt-red); color: var(--wt-red); }
+
+/* ===== CONTENEDOR PRINCIPAL ============================================= */
+main { max-width: 1280px; margin: 0 auto 60px; padding: 0 16px; }
+
+/* Cada una de las 5 PARTES */
+.part { display: none; animation: fade .25s ease; }
+.part.active { display: block; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.part__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 6px 2px 16px;
+  color: #fff;
+}
+.part__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; height: 40px;
+  background: var(--wt-gold);
+  color: var(--wt-red-dark);
+  font-weight: 900;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  box-shadow: var(--shadow-sm);
+}
+.part__title { margin: 0; font-size: clamp(1.2rem, 2.6vw, 1.7rem); font-weight: 800; }
+.part__hint  { margin: 0; font-size: .85rem; opacity: .9; flex-basis: 100%; }
+
+/* ===== FASE DE GRUPOS =================================================== */
+.groups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 18px;
+}
+
+.group-card {
+  background: var(--wt-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.group-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--wt-red) 0%, var(--wt-red-dark) 100%);
+  color: #fff;
+}
+.group-badge {
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--wt-gold);
+  color: var(--wt-red-dark);
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 1.5rem;
+}
+.group-card__head h3 { margin: 0; font-size: 1.05rem; letter-spacing: .04em; }
+.group-card__head small { display: block; font-weight: 400; opacity: .85; font-size: .72rem; }
+
+/* Tabla de posiciones / participantes */
+.standings { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.standings th, .standings td { padding: 6px 8px; text-align: center; }
+.standings th { color: var(--wt-muted); font-weight: 600; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; }
+.standings td:first-child, .standings th:first-child { text-align: left; }
+.standings tbody tr { border-top: 1px solid var(--wt-line); }
+.standings .pos { font-weight: 800; color: var(--wt-muted); width: 18px; }
+.standings .pts { font-weight: 800; }
+.standings tr.q1 { background: rgba(31, 138, 76, .10); }
+.standings tr.q2 { background: rgba(228, 181, 61, .14); }
+.standings tr.q3 { background: rgba(151, 10, 17, .07); }
+.standings .qtag {
+  font-size: .6rem; font-weight: 800; padding: 1px 6px; border-radius: 999px;
+  color: #fff; vertical-align: middle;
+}
+.qtag--1 { background: var(--wt-green); }
+.qtag--2 { background: #b58a17; }
+.qtag--3 { background: var(--wt-muted); }
+.qtag--3.in { background: var(--wt-red); }
+
+/* Lista de participantes simple (página fixture) */
+.team-list { list-style: none; margin: 0; padding: 8px 12px; }
+.team-list li { display: flex; align-items: center; gap: 10px; padding: 5px 4px; border-top: 1px solid var(--wt-line); }
+.team-list li:first-child { border-top: none; }
+
+/* Partidos */
+.matches { padding: 6px 12px 14px; }
+.fecha-label {
+  margin: 10px 4px 4px;
+  font-size: .68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--wt-red);
+}
+
+.match {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 6px;
+  border-top: 1px dashed var(--wt-line);
+}
+.match:first-of-type { border-top: none; }
+.match__when {
+  grid-column: 1 / -1;
+  font-size: .68rem;
+  color: var(--wt-muted);
+  font-weight: 600;
+}
+
+/* Ficha de selección */
+.team { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.team--home { justify-content: flex-end; text-align: right; }
+.team--away { justify-content: flex-start; text-align: left; }
+.tname { font-size: .85rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tname--empty { color: var(--wt-muted); }
+
+.flag {
+  width: 30px; height: 21px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  background: #efe8df;
+  border: 1px solid var(--wt-line);
+  overflow: hidden;
+  display: inline-flex;
+  box-shadow: 0 1px 2px rgba(0,0,0,.12);
+}
+.flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.flag--empty { background: repeating-linear-gradient(45deg, #f1eae1, #f1eae1 4px, #e7ddd2 4px, #e7ddd2 8px); }
+
+/* Marcador (cajas de resultado) */
+.score { display: flex; align-items: center; gap: 4px; }
+.score input {
+  width: 34px; height: 34px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 800;
+  border: 1px solid var(--wt-line);
+  border-radius: 8px;
+  background: var(--wt-paper);
+  color: var(--wt-ink);
+}
+.score input:focus { outline: none; border-color: var(--wt-red); box-shadow: 0 0 0 3px rgba(151,10,17,.15); }
+.score .dash { color: var(--wt-muted); font-weight: 700; }
+
+/* Marcadores: solo números, sin flechitas de incremento */
+.score-box { -moz-appearance: textfield; }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+/* ===== LLAVES / ELIMINATORIAS ========================================== */
+.round-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+.round-block { margin-bottom: 26px; }
+.round-block > h3 {
+  color: #fff;
+  margin: 0 2px 12px;
+  font-size: 1.05rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  border-left: 5px solid var(--wt-gold);
+  padding-left: 10px;
+}
+
+.ko-card {
+  background: var(--wt-card);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  padding: 12px 14px;
+  border-top: 4px solid var(--wt-red);
+}
+.ko-card__head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ko-num {
+  font-weight: 900;
+  background: var(--wt-ink);
+  color: #fff;
+  border-radius: 8px;
+  padding: 2px 9px;
+  font-size: .78rem;
+}
+.ko-when { font-size: .7rem; color: var(--wt-muted); font-weight: 600; text-align: right; }
+
+.ko-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.ko-side + .ko-side { border-top: 1px dashed var(--wt-line); }
+.ko-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ko-team .ko-input { flex: 1 1 auto; min-width: 60px; }
+.ko-team .ref-tag { margin-left: 0; }
+.ko-side.win .tname { color: var(--wt-green); font-weight: 800; }
+.ko-side.win .third-select { color: var(--wt-green); border-color: var(--wt-green); font-weight: 800; }
+.ko-side.win .ko-pick { background: var(--wt-green); border-color: var(--wt-green); color:#fff; }
+
+.ref-tag {
+  font-size: .62rem;
+  font-weight: 800;
+  color: var(--wt-red);
+  background: rgba(151,10,17,.08);
+  border-radius: 6px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* Entrada de texto para escribir el clasificado (página fixture) */
+.ko-input {
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  border: none;
+  border-bottom: 2px solid var(--wt-line);
+  background: transparent;
+  padding: 4px 2px;
+  color: var(--wt-ink);
+}
+.ko-input:focus { outline: none; border-color: var(--wt-red); }
+
+/* Selector de mejor tercero (página predictor) */
+.third-select {
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid var(--wt-line);
+  border-radius: 8px;
+  padding: 5px 6px;
+  background: var(--wt-paper);
+  max-width: 100%;
+  min-width: 0;        /* permite que se achique dentro de la tarjeta */
+  flex: 1 1 auto;      /* ocupa el espacio disponible sin desbordar */
+}
+.third-select:focus { outline: none; border-color: var(--wt-red); }
+
+/* Mini score para llaves */
+.ko-score input {
+  width: 32px; height: 30px;
+  text-align: center; font-weight: 800; font-size: .95rem;
+  border: 1px solid var(--wt-line); border-radius: 7px;
+  background: var(--wt-paper); color: var(--wt-ink);
+}
+.ko-score input:focus { outline: none; border-color: var(--wt-red); box-shadow: 0 0 0 3px rgba(151,10,17,.15); }
+
+/* Botón para elegir quién avanza por penales (empate) */
+.ko-pick {
+  border: 1px solid var(--wt-line);
+  background: #fff;
+  border-radius: 7px;
+  font-size: .66rem;
+  font-weight: 800;
+  padding: 4px 7px;
+  cursor: pointer;
+  color: var(--wt-muted);
+}
+.ko-pick:hover { border-color: var(--wt-green); color: var(--wt-green); }
+.pen-note { font-size: .62rem; color: var(--wt-muted); text-align:center; margin-top:6px; }
+
+/* ===== FINAL ============================================================ */
+.final-wrap {
+  display: flex;
+  justify-content: center;
+}
+.final-card {
+  background: var(--wt-card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 26px;
+  max-width: 760px;
+  width: 100%;
+  text-align: center;
+  border-top: 8px solid var(--wt-gold);
+}
+.final-card h3 {
+  margin: 0 0 4px;
+  color: var(--wt-red);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+}
+.final-card .final-meta { color: var(--wt-muted); font-size: .85rem; margin-bottom: 22px; }
+
+.final-stage {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 14px;
+}
+.finalist {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.finalist .flag { width: 86px; height: 58px; border-radius: 6px; }
+.finalist .finalist-name { font-weight: 800; font-size: 1.05rem; }
+.finalist .ref-tag { margin: 0; }
+.finalist input.ko-input { text-align: center; font-size: 1rem; max-width: 160px; }
+
+/* Resultado de cada finalista, DEBAJO del nombre */
+.finalist-score input {
+  width: 56px; height: 54px;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  border: 1px solid var(--wt-line);
+  border-radius: 10px;
+  background: var(--wt-paper);
+  color: var(--wt-ink);
+}
+.finalist-score input:focus { outline: none; border-color: var(--wt-red); box-shadow: 0 0 0 3px rgba(151,10,17,.15); }
+
+/* Penales del finalista (debajo del resultado) */
+.finalist-pen { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.finalist-pen .pen-cap {
+  font-size: .6rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--wt-muted);
+}
+.finalist-pen input {
+  width: 44px; height: 36px;
+  text-align: center; font-weight: 800; font-size: 1rem;
+  border: 1px dashed var(--wt-gold);
+  border-radius: 8px;
+  background: rgba(228, 181, 61, .10);
+  color: var(--wt-ink);
+}
+.finalist-pen input:focus { outline: none; border-color: var(--wt-red); }
+
+/* Los penales solo se muestran si está tildada la opción */
+.final-card:not(.show-pen) .finalist-pen { display: none; }
+
+/* Opción "Se define por penales" */
+.pen-toggle {
+  margin: 20px auto 4px;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  font-size: .9rem; font-weight: 700; color: var(--wt-red);
+  cursor: pointer;
+}
+.pen-toggle input { width: 18px; height: 18px; accent-color: var(--wt-red); cursor: pointer; }
+
+/* Hueco central para la imagen de la copa del mundo */
+.trophy-slot {
+  width: 130px;
+  height: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px dashed var(--wt-gold);
+  border-radius: 14px;
+  background: rgba(228, 181, 61, .08);
+  padding: 8px;
+}
+.trophy-slot img { max-width: 100%; max-height: 130px; object-fit: contain; }
+.trophy-slot .vs { font-weight: 900; color: var(--wt-red); font-size: 1.3rem; letter-spacing: .1em; }
+
+.final-score { margin: 22px 0 6px; }
+.final-score .score input { width: 46px; height: 46px; font-size: 1.4rem; }
+
+.champion {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--wt-gold), #f0d27a);
+  color: var(--wt-red-dark);
+  font-weight: 900;
+  font-size: 1.2rem;
+  letter-spacing: .05em;
+}
+.champion .champion-name { font-size: 1.5rem; display: block; margin-top: 4px; }
+.champion.empty { background: #f3ece1; color: var(--wt-muted); font-weight: 700; font-size: 1rem; }
+
+/* ===== AVISO / AYUDA ==================================================== */
+.notice {
+  max-width: 1280px;
+  margin: 0 auto 14px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,.92);
+  border-left: 5px solid var(--wt-gold);
+  border-radius: 10px;
+  font-size: .82rem;
+  color: var(--wt-ink);
+}
+.notice b { color: var(--wt-red); }
+
+/* Placeholder cuando la imagen aún no existe en /imagenes */
+img.img-missing { opacity: 0; }
+
+/* ===== PIE ============================================================== */
+.site-footer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px;
+  text-align: center;
+  color: #fff;
+  font-size: .8rem;
+  opacity: .9;
+}
+
+/* ===== RESPONSIVE ====================================================== */
+@media (max-width: 520px) {
+  .groups-grid, .round-grid { grid-template-columns: 1fr; }
+  .brand-logo { width: 64px; height: 64px; }
+  .deco-tool { width: 52px; height: 52px; }
+  .trophy-slot { width: 96px; height: 130px; }
+}
+
+/* ===== IMPRESIÓN ======================================================= */
+@media print {
+  body::before { display: none; }
+  html, body { background: #fff; }
+  .toolbar, .notice, .site-footer { display: none !important; }
+  .part { display: block !important; page-break-after: always; }
+  .group-card, .ko-card, .final-card { box-shadow: none; border: 1px solid #ccc; }
+  .site-header { color: #000; background: #fff; box-shadow: none; border: 1px solid #ccc; }
+  .part__head, .round-block > h3 { color: #000; }
+}

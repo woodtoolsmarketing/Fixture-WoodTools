@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fixture · Mundial 2026 · WoodTools</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Si una imagen de /imagenes todavía no existe, se muestra un recuadro neutro
+       (registrado antes que el body para captar también las imágenes del encabezado). -->
+  <script>document.addEventListener('error',function(e){var t=e.target;if(t&&t.tagName==='IMG')t.classList.add('img-missing');},true);</script>
+</head>
+<body>
+
+  <!-- ====================== ENCABEZADO ====================== -->
+  <header class="site-header">
+    <!-- Herramientas decorativas en las 4 esquinas -->
+    <img class="deco-tool deco-tool--tl" src="imagenes/herramientas/Sierra.png" alt="">
+    <img class="deco-tool deco-tool--tr" src="imagenes/herramientas/Fresa.png" alt="">
+    <img class="deco-tool deco-tool--bl" src="imagenes/herramientas/Mechas.png" alt="">
+    <img class="deco-tool deco-tool--br" src="imagenes/herramientas/Cuchillas.png" alt="">
+
+    <div class="site-header__row">
+      <!-- Logo arriba a la izquierda -->
+      <div class="brand-logo">
+        <img src="imagenes/Logo.png" alt="WoodTools">
+      </div>
+      <div class="site-header__titles">
+        <p class="site-header__kicker">WoodTools S.R.L. · Copa Mundial de la FIFA</p>
+        <h1>Fixture Mundial 2026</h1>
+        <p class="site-header__sub">Estados Unidos · México · Canadá — completá los resultados partido a partido.</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====================== BARRA DE NAVEGACIÓN ====================== -->
+  <nav class="toolbar">
+    <div class="toolbar__group" id="tabs">
+      <button class="tab-btn active" data-part="1">1 · Grupos A–F</button>
+      <button class="tab-btn" data-part="2">2 · Grupos G–L</button>
+      <button class="tab-btn" data-part="3">3 · Dieciseisavos</button>
+      <button class="tab-btn" data-part="4">4 · Octavos → 3.º puesto</button>
+      <button class="tab-btn" data-part="5">5 · Final</button>
+    </div>
+    <span class="toolbar__spacer"></span>
+    <div class="toolbar__group">
+      <a class="page-link current">Fixture</a>
+      <a class="page-link" href="predictor.html">Predictor</a>
+      <button class="btn btn--danger" id="btn-reset">Borrar todo</button>
+    </div>
+  </nav>
+
+  <div class="notice">
+    <b>¿Cómo se usa?</b> Cargá los goles de cada partido de grupos y escribí a mano las selecciones que clasifican
+    en cada llave. Movete entre resultados con <b>Enter</b> o las flechas <b>← → ↑ ↓</b>.
+    Todo se guarda automáticamente en este navegador.
+  </div>
+
+  <!-- ====================== CONTENIDO (5 PARTES) ====================== -->
+  <main>
+    <!-- PARTE 1 -->
+    <section class="part active" data-part="1">
+      <div class="part__head">
+        <span class="part__num">1</span>
+        <h2 class="part__title">Fase de grupos · Grupos A – F</h2>
+        <p class="part__hint">Primeras y segundas posiciones clasifican; los 8 mejores terceros también avanzan.</p>
+      </div>
+      <div class="groups-grid" id="groups-1"></div>
+    </section>
+
+    <!-- PARTE 2 -->
+    <section class="part" data-part="2">
+      <div class="part__head">
+        <span class="part__num">2</span>
+        <h2 class="part__title">Fase de grupos · Grupos G – L</h2>
+        <p class="part__hint">Primeras y segundas posiciones clasifican; los 8 mejores terceros también avanzan.</p>
+      </div>
+      <div class="groups-grid" id="groups-2"></div>
+    </section>
+
+    <!-- PARTE 3 -->
+    <section class="part" data-part="3">
+      <div class="part__head">
+        <span class="part__num">3</span>
+        <h2 class="part__title">Dieciseisavos de final</h2>
+        <p class="part__hint">32 clasificados · 16 partidos · 28 jun – 3 jul. Escribí el país clasificado sobre cada línea.</p>
+      </div>
+      <div class="round-grid" id="round-r32"></div>
+    </section>
+
+    <!-- PARTE 4 -->
+    <section class="part" data-part="4">
+      <div class="part__head">
+        <span class="part__num">4</span>
+        <h2 class="part__title">Octavos · Cuartos · Semis · 3.º y 4.º puesto</h2>
+        <p class="part__hint">Escribí el clasificado de cada cruce siguiendo las referencias (Gan. 73, etc.).</p>
+      </div>
+      <div class="round-block"><h3>Octavos de final</h3><div class="round-grid" id="round-r16"></div></div>
+      <div class="round-block"><h3>Cuartos de final</h3><div class="round-grid" id="round-qf"></div></div>
+      <div class="round-block"><h3>Semifinales</h3><div class="round-grid" id="round-sf"></div></div>
+      <div class="round-block"><h3>Tercer y cuarto puesto</h3><div class="round-grid" id="round-third"></div></div>
+    </section>
+
+    <!-- PARTE 5 -->
+    <section class="part" data-part="5">
+      <div class="part__head">
+        <span class="part__num">5</span>
+        <h2 class="part__title">La Gran Final</h2>
+        <p class="part__hint">Domingo 19 de julio · 16:00 · MetLife Stadium, Nueva York / Nueva Jersey.</p>
+      </div>
+      <div class="final-wrap" id="final-wrap"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    WOODTOOLS S.R.L. · Copa Mundial de la FIFA 2026 · Estados Unidos · México · Canadá
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/fixture.js"></script>
+</body>
+</html>
