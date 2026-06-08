@@ -65,15 +65,17 @@ body::before {
 
 /* Logo WoodTools (arriba a la izquierda) */
 .brand-logo {
-  width: 96px;
+  width: 136px;
   height: 96px;
   flex: 0 0 auto;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, .10);
+  border-radius: 50%;            /* óvalo (más ancho que alto) */
+  background: #ffffff;           /* fondo blanco */
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  padding: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .20);
 }
 .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
 
@@ -571,7 +573,7 @@ img.img-missing { opacity: 0; }
 /* ===== RESPONSIVE ====================================================== */
 @media (max-width: 520px) {
   .groups-grid, .round-grid { grid-template-columns: 1fr; }
-  .brand-logo { width: 64px; height: 64px; }
+  .brand-logo { width: 96px; height: 68px; }
   .deco-tool { width: 52px; height: 52px; }
   .trophy-slot { width: 96px; height: 130px; }
 }

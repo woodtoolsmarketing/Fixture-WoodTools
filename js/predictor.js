@@ -258,8 +258,48 @@
     finalReg = { home, away, champ, champLabel, champName };
   }
 
+  /* Empareja cada "mejor 3.º" con una llave que lo admita (respeta la
+     elegibilidad "3 A/B/C/D", etc.) usando caminos aumentantes. Devuelve
+     { 'n-a' -> grupo }. Completa siempre las 8 llaves. */
+  function assignThirds(qGroups, slots) {
+    const qset = new Set(qGroups);
+    const byKey = {}; slots.forEach(s => { byKey[s.key] = s; });
+    const mSlot = {}, mGroup = {};
+    function aug(slot, seen) {
+      for (let i = 0; i < slot.eligible.length; i++) {
+        const g = slot.eligible[i];
+        if (!qset.has(g) || seen.has(g)) continue;
+        seen.add(g);
+        const occ = mGroup[g];
+        if (occ === undefined || aug(byKey[occ], seen)) {
+          mSlot[slot.key] = g; mGroup[g] = slot.key;
+          return true;
+        }
+      }
+      return false;
+    }
+    slots.forEach(s => { if (mSlot[s.key] === undefined) aug(s, new Set()); });
+    // Red de seguridad: si por una combinación rara quedara alguna sin
+    // emparejar, la completamos con cualquier tercero libre (nunca vacía).
+    const used = new Set(Object.keys(mSlot).map(k => mSlot[k]));
+    const free = qGroups.filter(g => !used.has(g));
+    slots.forEach(s => { if (mSlot[s.key] === undefined && free.length) mSlot[s.key] = free.shift(); });
+    return mSlot;
+  }
+
+  /* ¿El mapeo guardado sigue siendo válido (completo, elegible y sin repetir)? */
+  function validThirds(third, qset, slots) {
+    const used = new Set();
+    for (let i = 0; i < slots.length; i++) {
+      const g = third[slots[i].key];
+      if (!g || !qset.has(g) || slots[i].eligible.indexOf(g) === -1 || used.has(g)) return false;
+      used.add(g);
+    }
+    return true;
+  }
+
   /* =====================================================================
-     5) ACTUALIZACIÓN GLOBAL 
+     5) ACTUALIZACIÓN GLOBAL
      ===================================================================== */
   function update() {
     const standings = {};
@@ -269,20 +309,21 @@
 
     const thirdTeamOf = grp => standings[grp][2].team;
 
-    // --- REPARTICIÓN ALEATORIA AUTOMÁTICA DE LOS MEJORES 8 TERCEROS ---
-    // Chequeamos si el set de 8 clasificados es distinto al último que guardamos.
-    const currentThirdsStr = thirds.qualified.map(t => t.group).sort().join('');
-    if (state.lastThirdsStr !== currentThirdsStr || Object.keys(state.third).length === 0) {
+    // --- ASIGNACIÓN AUTOMÁTICA Y VÁLIDA DE LOS 8 MEJORES TERCEROS ---
+    // Cada "mejor 3.º" se ubica en una llave que lo admita, respetando la
+    // elegibilidad (3 A/B/C/D, etc.), de modo que NINGUNA quede sin definir.
+    const qGroups = thirds.qualified.map(t => t.group);
+    const thirdSlots = [];
+    koReg.forEach(entry => {
+      if (entry.home.isThird) thirdSlots.push({ key: entry.n + '-h', eligible: entry.home.refInfo.groups });
+      if (entry.away.isThird) thirdSlots.push({ key: entry.n + '-a', eligible: entry.away.refInfo.groups });
+    });
+    const currentThirdsStr = qGroups.slice().sort().join('');
+    // recalculamos solo si cambió el set de clasificados o el mapeo quedó inválido
+    if (state.lastThirdsStr !== currentThirdsStr ||
+        !validThirds(state.third, new Set(qGroups), thirdSlots)) {
       state.lastThirdsStr = currentThirdsStr;
-      
-      // Mezclamos al azar y los asignamos a los 8 slots de dieciseisavos
-      const shuffled = thirds.qualified.map(t => t.group).sort(() => Math.random() - 0.5);
-      let i = 0;
-      state.third = {};
-      koReg.forEach(entry => {
-        if (entry.home.isThird) state.third[entry.n + '-h'] = shuffled[i++];
-        if (entry.away.isThird) state.third[entry.n + '-a'] = shuffled[i++];
-      });
+      state.third = assignThirds(qGroups, thirdSlots);
     }
 
     const winner = {}, loser = {};
