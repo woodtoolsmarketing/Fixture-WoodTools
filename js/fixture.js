@@ -59,7 +59,8 @@
     // Cabecera
     card.appendChild(el('div', { class: 'group-card__head' }, [
       el('span', { class: 'group-badge' }, [g.id]),
-      el('div', {}, [ el('h3', { html: 'GRUPO ' + g.id + '<small>4 selecciones · 6 partidos</small>' }) ])
+      el('div', {}, [ el('h3', { html: 'GRUPO ' + g.id + '<small>4 selecciones · 6 partidos</small>' }) ]),
+      el('div', { class: 'group-logo', html: '<img src="imagenes/Logo.png" alt="WoodTools">' })
     ]));
 
     // Participantes

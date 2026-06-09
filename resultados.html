@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resultados del Prode · Mundial 2026 · WoodTools</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script>document.addEventListener('error',function(e){var t=e.target;if(t&&t.tagName==='IMG')t.classList.add('img-missing');},true);</script>
+</head>
+<body>
+  <header class="site-header">
+    <img class="deco-tool deco-tool--tl" src="imagenes/herramientas/Sierra.png" alt="">
+    <img class="deco-tool deco-tool--tr" src="imagenes/herramientas/Fresa.png" alt="">
+    <img class="deco-tool deco-tool--bl" src="imagenes/herramientas/Mechas.png" alt="">
+    <img class="deco-tool deco-tool--br" src="imagenes/herramientas/Cuchillas.png" alt="">
+    <div class="site-header__row">
+      <div class="brand-logo"><img src="imagenes/Logo.png" alt="WoodTools"></div>
+      <div class="site-header__titles">
+        <p class="site-header__kicker">WoodTools S.R.L. · Copa Mundial de la FIFA</p>
+        <h1>Resultados del Prode</h1>
+        <p class="site-header__sub">Ranking de participantes. 3 pts resultado exacto · 1 pt acertar el ganador o empate.</p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toolbar">
+    <div class="toolbar__group">
+      <a class="page-link" href="index.html">Fixture</a>
+      <a class="page-link" href="predictor.html">Predecí tu mundial</a>
+      <a class="page-link" href="prode.html">Prode</a>
+      <a class="page-link current">Resultados</a>
+    </div>
+    <span class="toolbar__spacer"></span>
+    <button class="btn" id="btn-refresh">Actualizar</button>
+  </nav>
+
+  <main>
+    <div class="part active">
+      <div class="part__head"><span class="part__num">A</span><h2 class="part__title">Prode · Fase de grupos</h2></div>
+      <div class="board" id="board-grupos"><p class="board-empty">Cargando…</p></div>
+    </div>
+    <div class="part active">
+      <div class="part__head"><span class="part__num">B</span><h2 class="part__title">Prode · Mundial completo</h2></div>
+      <div class="board" id="board-completo"><p class="board-empty">Cargando…</p></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">WOODTOOLS S.R.L. · Copa Mundial de la FIFA 2026</footer>
+
+  <script>
+  (function () {
+    'use strict';
+    const API_BASE = '';
+    async function load(mode, elId) {
+      const box = document.getElementById(elId);
+      try {
+        const r = await fetch(API_BASE + '/api/leaderboard?mode=' + mode);
+        const data = await r.json();
+        if (!r.ok) throw new Error();
+        if (!data.tabla.length) { box.innerHTML = '<p class="board-empty">Todavía no hay participantes en esta modalidad.</p>'; return; }
+        let html = '<table class="board-table"><thead><tr><th>#</th><th>Participante</th><th>Aciertos</th><th>Puntos</th></tr></thead><tbody>';
+        data.tabla.forEach((p, i) => {
+          html += '<tr class="' + (i < 3 ? 'top' + (i + 1) : '') + '"><td class="pos">' + (i + 1) +
+            '</td><td>' + esc(p.nombre) + '</td><td>' + (p.aciertos || 0) +
+            '</td><td class="pts">' + p.puntos + '</td></tr>';
+        });
+        html += '</tbody></table><p class="board-note">Partidos con resultado cargado: ' + data.jugados + '</p>';
+        box.innerHTML = html;
+      } catch (e) {
+        box.innerHTML = '<p class="board-empty">No se pudo cargar el ranking (el servidor todavía no está activo).</p>';
+      }
+    }
+    function esc(s) { return String(s).replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }
+    function loadAll() { load('grupos', 'board-grupos'); load('completo', 'board-completo'); }
+    document.getElementById('btn-refresh').addEventListener('click', loadAll);
+    loadAll();
+  })();
+  </script>
+</body>
+</html>

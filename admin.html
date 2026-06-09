@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin · Prode WoodTools</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script>document.addEventListener('error',function(e){var t=e.target;if(t&&t.tagName==='IMG')t.classList.add('img-missing');},true);</script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header__row">
+      <div class="brand-logo"><img src="imagenes/Logo.png" alt="WoodTools"></div>
+      <div class="site-header__titles">
+        <p class="site-header__kicker">WoodTools S.R.L. · Panel interno</p>
+        <h1>Admin · Participantes del Prode</h1>
+        <p class="site-header__sub">Privado. No compartir. Datos de contacto y puntajes de cada participante.</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Puerta de acceso -->
+    <div class="save-panel admin-gate" id="gate">
+      <h3>Acceso interno</h3>
+      <p class="save-sub">Ingresá la clave de administrador.</p>
+      <div class="save-form" style="grid-template-columns:1fr">
+        <label>Clave<input type="password" id="token" placeholder="ADMIN_TOKEN"></label>
+      </div>
+      <button class="btn-save" id="btn-enter">Entrar</button>
+      <p class="save-msg err" id="gate-msg"></p>
+    </div>
+
+    <!-- Panel -->
+    <div id="panel" hidden>
+      <div class="part active">
+        <div class="part__head">
+          <span class="part__num">1</span><h2 class="part__title">Participantes</h2>
+          <p class="part__hint" id="resumen"></p>
+        </div>
+        <div class="board"><div id="tabla">Cargando…</div></div>
+      </div>
+
+      <div class="part active">
+        <div class="part__head"><span class="part__num">2</span><h2 class="part__title">Cargar resultado real</h2>
+          <p class="part__hint">Clave del partido: grupos <code>g-A-0</code>…<code>g-L-5</code> · llaves <code>m73</code>…<code>m102</code> · 3.º puesto <code>mTP</code> · final <code>mF</code>.</p>
+        </div>
+        <div class="save-panel">
+          <div class="save-form">
+            <label>Partido (match_key)<input type="text" id="mk" placeholder="g-A-0"></label>
+            <label>Goles local<input type="text" id="gh" inputmode="numeric" placeholder="0"></label>
+            <label>Goles visitante<input type="text" id="ga" inputmode="numeric" placeholder="0"></label>
+          </div>
+          <button class="btn-save" id="btn-result">Guardar resultado</button>
+          <p class="save-msg" id="result-msg"></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">WOODTOOLS S.R.L. · Panel interno</footer>
+
+  <script>
+  (function () {
+    'use strict';
+    const API_BASE = '';
+    let TOKEN = sessionStorage.getItem('wt-admin-token') || '';
+    const $ = id => document.getElementById(id);
+
+    async function api(pathname, opts) {
+      opts = opts || {};
+      opts.headers = Object.assign({ 'x-admin-token': TOKEN }, opts.headers || {});
+      const r = await fetch(API_BASE + pathname, opts);
+      return { ok: r.ok, status: r.status, data: await r.json().catch(() => ({})) };
+    }
+    function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }
+
+    async function loadParticipants() {
+      const res = await api('/api/admin/participantes');
+      if (res.status === 401) { showGate('Clave incorrecta.'); return; }
+      if (!res.ok) { $('tabla').innerHTML = 'Error cargando datos.'; return; }
+      $('gate').hidden = true; $('panel').hidden = false;
+      const ps = res.data.participantes || [];
+      $('resumen').textContent = res.data.total + ' participante(s) · ' +
+        ps.filter(p => p.modalidad === 'grupos').length + ' en grupos · ' +
+        ps.filter(p => p.modalidad === 'completo').length + ' en completo';
+      if (!ps.length) { $('tabla').innerHTML = '<p class="board-empty">Sin participantes todavía.</p>'; return; }
+      let h = '<table class="admin-table"><thead><tr><th>Fecha</th><th>Modalidad</th><th>Nombre</th><th>Teléfono</th><th>Instagram</th><th>IP</th><th>Pts</th></tr></thead><tbody>';
+      ps.forEach(p => {
+        h += '<tr><td>' + new Date(p.created_at).toLocaleString('es-AR') + '</td><td>' + esc(p.modalidad) +
+          '</td><td>' + esc(p.nombre) + '</td><td>' + esc(p.telefono) +
+          '</td><td>@' + esc(p.instagram) + '</td><td>' + esc(p.ip) +
+          '</td><td class="pts">' + (p.pts || 0) + '</td></tr>';
+      });
+      $('tabla').innerHTML = h + '</tbody></table>';
+    }
+
+    function showGate(msg) { $('panel').hidden = true; $('gate').hidden = false; $('gate-msg').textContent = msg || ''; }
+
+    $('btn-enter').addEventListener('click', () => {
+      TOKEN = $('token').value.trim();
+      sessionStorage.setItem('wt-admin-token', TOKEN);
+      loadParticipants();
+    });
+
+    $('btn-result').addEventListener('click', async () => {
+      const msg = $('result-msg');
+      const body = { match_key: $('mk').value.trim(), gh: parseInt($('gh').value, 10), ga: parseInt($('ga').value, 10) };
+      if (!body.match_key || Number.isNaN(body.gh) || Number.isNaN(body.ga)) { msg.textContent = 'Completá partido y goles.'; msg.className = 'save-msg err'; return; }
+      const res = await api('/api/admin/resultado', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (res.ok) { msg.textContent = 'Resultado guardado ✓'; msg.className = 'save-msg'; loadParticipants(); }
+      else { msg.textContent = res.data.error || 'Error'; msg.className = 'save-msg err'; }
+    });
+
+    if (TOKEN) loadParticipants(); else showGate('');
+  })();
+  </script>
+</body>
+</html>

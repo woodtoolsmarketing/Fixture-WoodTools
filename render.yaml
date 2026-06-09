@@ -1,0 +1,25 @@
+# Despliegue en Render como Web Service (Node) — sirve el sitio + la API del Prode.
+# Importante: hoy tu sitio es un "Static Site". Render no convierte tipos, así que:
+#   1) Subí estos archivos al repo de GitHub.
+#   2) En Render: New + → "Blueprint" (usa este render.yaml) o "Web Service" manual.
+#   3) Cargá las variables de entorno (las de tu .env) en el panel del servicio.
+#   4) Cuando funcione, podés borrar el Static Site viejo.
+services:
+  - type: web
+    name: woodtools-prode
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: SUPABASE_URL
+        sync: false          # cargar a mano en Render (secreto)
+      - key: SUPABASE_SERVICE_KEY
+        sync: false          # cargar a mano en Render (secreto)
+      - key: APIFOOTBALL_URL
+        value: https://v3.football.api-sports.io
+      - key: APIFOOTBALL_KEY
+        sync: false          # cargar a mano en Render (secreto)
+      - key: ADMIN_TOKEN
+        sync: false          # tu clave del panel /admin.html
+    # Render define PORT automáticamente; el server usa process.env.PORT.

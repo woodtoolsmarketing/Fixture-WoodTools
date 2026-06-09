@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Predictor · Mundial 2026 · WoodTools</title>
+  <title>Prode · Mundial 2026 · WoodTools</title>
   <link rel="stylesheet" href="css/styles.css">
-  <!-- Si una imagen de /imagenes todavía no existe, se muestra un recuadro neutro
-       (registrado antes que el body para captar también las imágenes del encabezado). -->
   <script>document.addEventListener('error',function(e){var t=e.target;if(t&&t.tagName==='IMG')t.classList.add('img-missing');},true);</script>
 </head>
 <body>
@@ -24,8 +22,8 @@
       </div>
       <div class="site-header__titles">
         <p class="site-header__kicker">WoodTools S.R.L. · Copa Mundial de la FIFA</p>
-        <h1>Predecí tu Mundial 2026</h1>
-        <p class="site-header__sub">Simulá los resultados y mirá cómo avanza el cuadro hasta el campeón.</p>
+        <h1>Prode Mundial 2026</h1>
+        <p class="site-header__sub">Predecí los resultados, sumá puntos y competí por la herramienta.</p>
       </div>
     </div>
   </header>
@@ -41,18 +39,27 @@
     </div>
     <span class="toolbar__spacer"></span>
     <div class="toolbar__group">
-      <a class="page-link" href="index.html">Fixture</a>
-      <a class="page-link current">Predecí tu mundial</a>
-      <a class="page-link" href="prode.html">Prode</a>
+      <a class="page-link" href="predictor.html">Predecí tu mundial</a>
+      <a class="page-link current">Prode</a>
       <a class="page-link" href="resultados.html">Resultados</a>
-      <button class="btn btn--danger" id="btn-reset">Borrar todo</button>
     </div>
   </nav>
 
+  <!-- Selector de modalidad -->
+  <div class="mode-bar">
+    <span class="mode-bar__label">Elegí tu modalidad de Prode:</span>
+    <button class="mode-btn" data-mode="grupos">🥅 Fase de grupos</button>
+    <button class="mode-btn" data-mode="completo">🏆 Mundial completo</button>
+    <span class="mode-bar__hint" id="mode-hint">Podés jugar las dos. Una vez que guardás, no se puede modificar.</span>
+  </div>
+
+  <!-- Banner cuando la modalidad ya fue enviada / bloqueada -->
+  <div class="lock-banner" id="lock-banner" hidden></div>
+
   <div class="notice">
-    <b>¿Cómo funciona?</b> Cargá los goles de la fase de grupos y la tabla calcula sola los <b>1.º</b>, <b>2.º</b> y
-    los <b>8 mejores terceros</b> que clasifican. En cada llave elegís el tercero que entra y los ganadores van
-    avanzando solos hasta la final. En caso de empate en una llave, tocá <b>⚽ Pasa</b> para definir por penales.
+    <b>¿Cómo se juega?</b> Elegí una modalidad y cargá tus pronósticos. Cuando termines, tocá <b>Guardar</b>,
+    completá tus datos y tu Prode queda registrado (no se puede modificar). Puntuación por partido:
+    <b>3 pts</b> si acertás el resultado exacto, <b>1 pt</b> si acertás solo el ganador o el empate, <b>0</b> si no.
     Movete entre resultados con <b>Enter</b> o las flechas <b>← → ↑ ↓</b>.
   </div>
 
@@ -76,6 +83,8 @@
         <p class="part__hint">La tabla se ordena por puntos, diferencia de gol y goles a favor.</p>
       </div>
       <div class="groups-grid" id="groups-2"></div>
+      <!-- Guardar (modalidad Fase de grupos) -->
+      <div class="save-panel" id="save-grupos"></div>
     </section>
 
     <!-- PARTE 3 -->
@@ -83,7 +92,7 @@
       <div class="part__head">
         <span class="part__num">3</span>
         <h2 class="part__title">Dieciseisavos de final</h2>
-        <p class="part__hint">Los 1.º y 2.º entran solos. Para cada "mejor 3.º" elegí cuál de los terceros clasificados ocupa el lugar.</p>
+        <p class="part__hint">Los 1.º y 2.º entran solos y los mejores terceros se acomodan en su llave.</p>
       </div>
       <div class="round-grid" id="round-r32"></div>
     </section>
@@ -109,6 +118,8 @@
         <p class="part__hint">Domingo 19 de julio · 16:00 · MetLife Stadium, Nueva York / Nueva Jersey.</p>
       </div>
       <div class="final-wrap" id="final-wrap"></div>
+      <!-- Guardar (modalidad Mundial completo) -->
+      <div class="save-panel" id="save-completo"></div>
     </section>
   </main>
 
@@ -117,6 +128,6 @@
   </footer>
 
   <script src="js/data.js"></script>
-  <script src="js/predictor.js"></script>
+  <script src="js/prode.js"></script>
 </body>
 </html>

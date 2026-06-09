@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const KEY = 'wt-predictor-v1';
+  const KEY = 'wt-prode-v1';
   const state = loadState();
   
   function loadState() {
@@ -17,6 +17,7 @@
       pen:   s.pen   || {},   // ganador por penales      m89 -> 'home'|'away'
       third: s.third || {},   // mapping automático:      '75-a' -> 'B'
       flags: s.flags || {},   // banderas varias           { finalPen: true }
+      mode:  s.mode  || null, // modalidad elegida: 'grupos' | 'completo'
       lastThirdsStr: s.lastThirdsStr || '' // guarda el set actual de 3.º
     };
   }
@@ -428,24 +429,121 @@
   }
 
   /* =====================================================================
-     6) NAVEGACIÓN E INICIO
+     6) MODO PRODE · GUARDAR · BLOQUEO
+     ===================================================================== */
+  // Base del backend. '' = mismo origen. En Render apuntará al Web Service.
+  const API_BASE = '';
+  const LOCK_KEY = m => 'wt-prode-locked-' + m;
+  const isLocked = m => !!localStorage.getItem(LOCK_KEY(m));
+  const lockedData = m => { try { return JSON.parse(localStorage.getItem(LOCK_KEY(m))); } catch (e) { return null; } };
+
+  // Muestra/oculta pestañas y el panel de guardar según la modalidad.
+  function applyMode(m) {
+    state.mode = m; save();
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+    const onlyGroups = (m === 'grupos');
+    document.querySelectorAll('#tabs .tab-btn').forEach(btn => {
+      btn.style.display = (onlyGroups && +btn.dataset.part >= 3) ? 'none' : '';
+    });
+    const active = document.querySelector('#tabs .tab-btn.active');
+    if (onlyGroups && active && +active.dataset.part >= 3) {
+      document.querySelector('#tabs .tab-btn[data-part="1"]').click();
+    }
+    document.getElementById('save-grupos').style.display   = (m === 'grupos')   ? '' : 'none';
+    document.getElementById('save-completo').style.display = (m === 'completo') ? '' : 'none';
+    if (m) renderSavePanel(m);
+    refreshLock();
+  }
+
+  // Formulario de guardado dentro del panel de la modalidad.
+  function renderSavePanel(m) {
+    const panel = document.getElementById(m === 'grupos' ? 'save-grupos' : 'save-completo');
+    if (panel.dataset.built) return;
+    panel.dataset.built = '1';
+    const titulo = m === 'grupos'
+      ? 'Guardar mi Prode · Fase de grupos'
+      : 'Guardar mi Prode · Mundial completo';
+    panel.innerHTML =
+      '<h3>' + titulo + '</h3>' +
+      '<p class="save-sub">Completá tus datos para registrar tu pronóstico. ' +
+        '<b>Una vez guardado no se puede modificar.</b></p>' +
+      '<div class="save-form">' +
+        '<label>Nombre y apellido<input type="text" id="f-' + m + '-nombre" autocomplete="name" placeholder="Tu nombre"></label>' +
+        '<label>Teléfono<input type="tel" id="f-' + m + '-tel" autocomplete="tel" placeholder="Ej: 11 5555-5555"></label>' +
+        '<label>Usuario de Instagram<input type="text" id="f-' + m + '-ig" placeholder="@usuario"></label>' +
+      '</div>' +
+      '<button class="btn-save" id="btn-save-' + m + '">Guardar mi Prode</button>' +
+      '<p class="save-msg" id="msg-' + m + '"></p>' +
+      '<p class="disclaimer">⚠️ Si introducís datos falsos quedás <b>descalificado</b>. La persona ganadora ' +
+        'deberá enviar sus datos para el envío de la herramienta. Se permite participar <b>una sola vez por ' +
+        'modalidad</b>; si alguno de tus datos ya figura registrado, no podrás volver a participar.</p>';
+    document.getElementById('btn-save-' + m).addEventListener('click', () => submitProde(m));
+  }
+
+  // Pronóstico a enviar: grupos = solo goles de grupos · completo = todo.
+  function gatherPrediction(m) {
+    if (m === 'grupos') return { gs: state.gs };
+    return { gs: state.gs, ks: state.ks, pen: state.pen, third: state.third, flags: state.flags };
+  }
+
+  async function submitProde(m) {
+    const msg = document.getElementById('msg-' + m);
+    const nombre = document.getElementById('f-' + m + '-nombre').value.trim();
+    const tel    = document.getElementById('f-' + m + '-tel').value.trim();
+    const ig     = document.getElementById('f-' + m + '-ig').value.trim();
+    if (!nombre || !tel || !ig) { msg.textContent = 'Completá nombre, teléfono e Instagram.'; msg.className = 'save-msg err'; return; }
+    msg.textContent = 'Guardando…'; msg.className = 'save-msg';
+    const payload = { mode: m, nombre, telefono: tel, instagram: ig, prediction: gatherPrediction(m) };
+    try {
+      const r = await fetch(API_BASE + '/api/prode/submit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) { msg.textContent = data.error || 'No se pudo guardar. Probá de nuevo.'; msg.className = 'save-msg err'; return; }
+      localStorage.setItem(LOCK_KEY(m), JSON.stringify({ nombre, telefono: tel, instagram: ig, ts: Date.now() }));
+      refreshLock();
+    } catch (e) {
+      // backend todavía no desplegado: guardamos el pronóstico localmente
+      localStorage.setItem(LOCK_KEY(m), JSON.stringify({ nombre, telefono: tel, instagram: ig, ts: Date.now(), local: true }));
+      refreshLock();
+    }
+  }
+
+  // Bloquea la UI si la modalidad activa ya fue enviada.
+  function refreshLock() {
+    const m = state.mode;
+    const banner = document.getElementById('lock-banner');
+    const locked = !!(m && isLocked(m));
+    document.querySelectorAll('main input, main select, .ko-pick, .btn-save')
+      .forEach(el => { el.disabled = locked; });
+    if (locked) {
+      const d = lockedData(m) || {};
+      banner.hidden = false;
+      banner.innerHTML = '🔒 <b>Ya registraste tu Prode (' +
+        (m === 'grupos' ? 'Fase de grupos' : 'Mundial completo') + ')</b> a nombre de <b>' +
+        (d.nombre || '') + '</b>. No se puede modificar.' +
+        (d.local ? ' <span class="local-note">(guardado localmente; se sincroniza cuando el backend esté activo)</span>' : '');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      banner.hidden = true;
+    }
+  }
+
+  /* =====================================================================
+     7) NAVEGACIÓN E INICIO
      ===================================================================== */
   function setupTabs() {
     const tabs = document.querySelectorAll('#tabs .tab-btn');
     const parts = document.querySelectorAll('.part');
     tabs.forEach(btn => btn.addEventListener('click', () => {
+      if (btn.style.display === 'none') return;
       tabs.forEach(b => b.classList.toggle('active', b === btn));
       parts.forEach(sec => sec.classList.toggle('active', sec.dataset.part === btn.dataset.part));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }));
   }
 
-  document.getElementById('btn-reset').addEventListener('click', () => {
-    if (confirm('¿Borrar toda la simulación del predictor?')) {
-      localStorage.removeItem(KEY);
-      location.reload();
-    }
-  });
+  document.querySelectorAll('.mode-btn').forEach(b => b.addEventListener('click', () => applyMode(b.dataset.mode)));
 
   WT.GROUPS.slice(0, 6).forEach(g => document.getElementById('groups-1').appendChild(renderGroup(g)));
   WT.GROUPS.slice(6).forEach(g => document.getElementById('groups-2').appendChild(renderGroup(g)));
@@ -457,4 +555,17 @@
   buildFinal();
   setupTabs();
   update();
+  applyMode(state.mode || 'completo');   // modalidad por defecto
+
+  // Bloqueo por IP desde el servidor: si esta IP ya participó, se bloquea.
+  fetch(API_BASE + '/api/prode/status')
+    .then(r => (r.ok ? r.json() : null))
+    .then(s => {
+      if (!s) return;
+      ['grupos', 'completo'].forEach(m => {
+        if (s[m]) localStorage.setItem(LOCK_KEY(m), JSON.stringify({ nombre: s[m].nombre, server: true }));
+      });
+      refreshLock();
+    })
+    .catch(() => {});
 })();

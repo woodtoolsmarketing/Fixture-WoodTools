@@ -221,6 +221,23 @@ main { max-width: 1280px; margin: 0 auto 60px; padding: 0 16px; }
 .group-card__head h3 { margin: 0; font-size: 1.05rem; letter-spacing: .04em; }
 .group-card__head small { display: block; font-weight: 400; opacity: .85; font-size: .72rem; }
 
+/* Logo WoodTools (óvalo blanco) en la otra punta de la cabecera del grupo */
+.group-logo {
+  margin-left: auto;
+  flex: 0 0 auto;
+  width: 58px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 5px;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, .18);
+}
+.group-logo img { width: 100%; height: 100%; object-fit: contain; }
+
 /* Tabla de posiciones / participantes */
 .standings { width: 100%; border-collapse: collapse; font-size: .85rem; }
 .standings th, .standings td { padding: 6px 8px; text-align: center; }
@@ -229,17 +246,16 @@ main { max-width: 1280px; margin: 0 auto 60px; padding: 0 16px; }
 .standings tbody tr { border-top: 1px solid var(--wt-line); }
 .standings .pos { font-weight: 800; color: var(--wt-muted); width: 18px; }
 .standings .pts { font-weight: 800; }
-.standings tr.q1 { background: rgba(31, 138, 76, .10); }
-.standings tr.q2 { background: rgba(228, 181, 61, .14); }
-.standings tr.q3 { background: rgba(151, 10, 17, .07); }
+.standings tr.qual { background: rgba(31, 138, 76, .15); }
+.standings tr.qual td:first-child { box-shadow: inset 4px 0 0 var(--wt-green); }
+.standings tr.elim { background: rgba(151, 10, 17, .10); }
+.standings tr.elim td:first-child { box-shadow: inset 4px 0 0 var(--wt-red); }
 .standings .qtag {
   font-size: .6rem; font-weight: 800; padding: 1px 6px; border-radius: 999px;
   color: #fff; vertical-align: middle;
 }
-.qtag--1 { background: var(--wt-green); }
-.qtag--2 { background: #b58a17; }
-.qtag--3 { background: var(--wt-muted); }
-.qtag--3.in { background: var(--wt-red); }
+.qtag--in  { background: var(--wt-green); }
+.qtag--out { background: var(--wt-red); }
 
 /* Lista de participantes simple (página fixture) */
 .team-list { list-style: none; margin: 0; padding: 8px 12px; }
@@ -555,6 +571,90 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   color: var(--wt-ink);
 }
 .notice b { color: var(--wt-red); }
+
+/* ===== PRODE: modalidad, guardar y bloqueo ============================= */
+.mode-bar {
+  max-width: 1280px;
+  margin: 0 auto 14px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, .96);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mode-bar__label { font-weight: 800; color: var(--wt-red); }
+.mode-bar__hint { font-size: .78rem; color: var(--wt-muted); flex-basis: 100%; }
+.mode-btn {
+  font: inherit; font-weight: 700; cursor: pointer;
+  border: 2px solid var(--wt-line); background: #fff; color: var(--wt-ink);
+  padding: 9px 16px; border-radius: 999px; transition: all .15s ease;
+}
+.mode-btn:hover { border-color: var(--wt-red); color: var(--wt-red); }
+.mode-btn.active { background: var(--wt-red); border-color: var(--wt-red); color: #fff; }
+
+.lock-banner {
+  max-width: 1280px;
+  margin: 0 auto 14px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, var(--wt-gold), #f0d27a);
+  color: var(--wt-red-dark);
+  border-radius: var(--radius);
+  font-size: .95rem;
+  box-shadow: var(--shadow-sm);
+}
+.lock-banner .local-note { font-weight: 400; font-size: .8rem; opacity: .8; }
+
+.save-panel {
+  margin: 20px 2px 4px;
+  padding: 20px 22px;
+  background: var(--wt-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-top: 6px solid var(--wt-gold);
+}
+.save-panel h3 { margin: 0 0 4px; color: var(--wt-red); font-size: 1.2rem; }
+.save-sub { margin: 0 0 14px; font-size: .88rem; color: var(--wt-ink); }
+.save-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.save-form label { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; font-weight: 700; color: var(--wt-muted); }
+.save-form input {
+  font: inherit; font-weight: 600; padding: 9px 10px;
+  border: 1px solid var(--wt-line); border-radius: 9px; background: var(--wt-paper); color: var(--wt-ink);
+}
+.save-form input:focus { outline: none; border-color: var(--wt-red); box-shadow: 0 0 0 3px rgba(151,10,17,.15); }
+.btn-save {
+  margin-top: 14px; font: inherit; font-weight: 800; cursor: pointer;
+  background: var(--wt-red); color: #fff; border: none; border-radius: 999px;
+  padding: 12px 26px; font-size: 1rem; transition: background .15s ease;
+}
+.btn-save:hover { background: var(--wt-red-dark); }
+.btn-save:disabled { background: var(--wt-muted); cursor: not-allowed; }
+.save-msg { margin: 10px 0 0; font-weight: 700; font-size: .85rem; min-height: 1em; }
+.save-msg.err { color: var(--wt-red); }
+.disclaimer {
+  margin: 14px 0 0; padding-top: 12px; border-top: 1px dashed var(--wt-line);
+  font-size: .76rem; color: var(--wt-muted); line-height: 1.5;
+}
+@media (max-width: 560px) { .save-form { grid-template-columns: 1fr; } }
+
+/* ===== Ranking / Admin ================================================= */
+.board { background: var(--wt-card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px 14px 14px; }
+.board-empty { color: var(--wt-muted); padding: 14px 4px; }
+.board-note { font-size: .72rem; color: var(--wt-muted); margin: 8px 4px 2px; }
+.board-table, .admin-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.board-table th, .board-table td, .admin-table th, .admin-table td { padding: 9px 10px; text-align: left; }
+.board-table th, .admin-table th { color: var(--wt-muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; }
+.board-table tbody tr, .admin-table tbody tr { border-top: 1px solid var(--wt-line); }
+.board-table .pos { width: 34px; font-weight: 800; color: var(--wt-muted); }
+.board-table .pts { text-align: right; font-weight: 800; font-size: 1.05rem; color: var(--wt-red); }
+.board-table tr.top1 { background: rgba(228,181,61,.22); }
+.board-table tr.top2 { background: rgba(228,181,61,.13); }
+.board-table tr.top3 { background: rgba(228,181,61,.07); }
+.admin-table td { font-size: .82rem; }
+.admin-gate { max-width: 420px; margin: 30px auto; }
+.admin-gate input { width: 100%; }
 
 /* Placeholder cuando la imagen aún no existe en /imagenes */
 img.img-missing { opacity: 0; }

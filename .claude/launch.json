@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "fixture-static",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8765"],
+      "name": "fixture-node",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
       "port": 8765
     }
   ]
