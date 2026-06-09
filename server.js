@@ -18,9 +18,14 @@ const {
   APIFOOTBALL_KEY,
   THESPORTSDB_KEY = '3',
   SYNC_MINUTES = '0',          // > 0 = buscar resultados solo, cada N minutos
+  PRODE_DEADLINE = '2026-06-11T15:50:00-03:00',  // cierre de inscripción (hora Argentina)
   ADMIN_TOKEN = 'cambia-esta-clave'
 } = process.env;
 const results = require('./lib/results');
+
+// Cierre del Prode: después de esta fecha no se puede registrar ni modificar.
+const DEADLINE_MS = Date.parse(PRODE_DEADLINE);
+const isClosed = () => Number.isFinite(DEADLINE_MS) && Date.now() >= DEADLINE_MS;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY en el entorno.');
@@ -100,7 +105,7 @@ app.get('/api/prode/status', async (req, res) => {
     const { data, error } = await sb.from('prode_participantes')
       .select('modalidad,nombre').eq('ip', ip);
     if (error) throw error;
-    const r = { grupos: null, completo: null };
+    const r = { grupos: null, completo: null, closed: isClosed(), deadline: DEADLINE_MS, now: Date.now() };
     (data || []).forEach(p => { r[p.modalidad] = { nombre: p.nombre }; });
     res.json(r);
   } catch (e) { res.status(500).json({ error: 'Error consultando estado' }); }
@@ -109,6 +114,7 @@ app.get('/api/prode/status', async (req, res) => {
 // Guardar un Prode (una sola vez por modalidad; sin datos duplicados)
 app.post('/api/prode/submit', async (req, res) => {
   try {
+    if (isClosed()) return res.status(403).json({ error: 'El registro del Prode cerró: el Mundial ya comenzó.' });
     const { mode, nombre, telefono, instagram, prediction } = req.body || {};
     if (!['grupos', 'completo'].includes(mode)) return res.status(400).json({ error: 'Modalidad inválida' });
     const nom = norm.nombre(nombre), tel = norm.tel(telefono), ig = norm.ig(instagram);

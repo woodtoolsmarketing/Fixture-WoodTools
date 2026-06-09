@@ -437,6 +437,11 @@
   const isLocked = m => !!localStorage.getItem(LOCK_KEY(m));
   const lockedData = m => { try { return JSON.parse(localStorage.getItem(LOCK_KEY(m))); } catch (e) { return null; } };
 
+  // Cierre de inscripción: jueves 11/06 15:50 (hora Argentina). El servidor manda
+  // la verdad; esto es el respaldo si todavía no respondió.
+  const DEADLINE = Date.parse('2026-06-11T15:50:00-03:00');
+  let prodeClosed = Date.now() >= DEADLINE;
+
   // Muestra/oculta pestañas y el panel de guardar según la modalidad.
   function applyMode(m) {
     state.mode = m; save();
@@ -488,6 +493,7 @@
 
   async function submitProde(m) {
     const msg = document.getElementById('msg-' + m);
+    if (prodeClosed) { msg.textContent = 'El registro cerró: el Mundial ya comenzó.'; msg.className = 'save-msg err'; refreshLock(); return; }
     const nombre = document.getElementById('f-' + m + '-nombre').value.trim();
     const tel    = document.getElementById('f-' + m + '-tel').value.trim();
     const ig     = document.getElementById('f-' + m + '-ig').value.trim();
@@ -509,11 +515,25 @@
     }
   }
 
-  // Bloquea la UI si la modalidad activa ya fue enviada.
+  // Bloquea la UI: 1) si el Prode cerró (pasó la fecha límite) o 2) si esta
+  // persona ya envió la modalidad activa.
   function refreshLock() {
     const m = state.mode;
     const banner = document.getElementById('lock-banner');
+
+    // 1) Cerrado para todos: se bloquea TODO (incluido el selector de modalidad).
+    if (prodeClosed) {
+      document.querySelectorAll('main input, main select, .ko-pick, .btn-save, .mode-btn')
+        .forEach(el => { el.disabled = true; });
+      banner.hidden = false;
+      banner.innerHTML = '🔒 <b>El registro del Prode está cerrado.</b> ' +
+        'El Mundial ya comenzó (jueves 11/06, 15:50 h). Ya no se pueden cargar ni modificar pronósticos.';
+      return;
+    }
+
+    // 2) Modalidad ya enviada por esta persona.
     const locked = !!(m && isLocked(m));
+    document.querySelectorAll('.mode-btn').forEach(el => { el.disabled = false; });
     document.querySelectorAll('main input, main select, .ko-pick, .btn-save')
       .forEach(el => { el.disabled = locked; });
     if (locked) {
@@ -562,6 +582,7 @@
     .then(r => (r.ok ? r.json() : null))
     .then(s => {
       if (!s) return;
+      if (typeof s.closed === 'boolean') prodeClosed = s.closed;   // verdad del servidor
       ['grupos', 'completo'].forEach(m => {
         if (s[m]) localStorage.setItem(LOCK_KEY(m), JSON.stringify({ nombre: s[m].nombre, server: true }));
       });
