@@ -103,10 +103,11 @@ app.get('/api/prode/status', async (req, res) => {
   try {
     const ip = clientIp(req);
     const { data, error } = await sb.from('prode_participantes')
-      .select('modalidad,nombre').eq('ip', ip);
+      .select('modalidad').eq('ip', ip);
     if (error) throw error;
-    const r = { grupos: null, completo: null, closed: isClosed(), deadline: DEADLINE_MS, now: Date.now() };
-    (data || []).forEach(p => { r[p.modalidad] = { nombre: p.nombre }; });
+    // No exponemos el nombre: la IP puede pertenecer a otra persona de la misma red.
+    const r = { grupos: false, completo: false, closed: isClosed(), deadline: DEADLINE_MS, now: Date.now() };
+    (data || []).forEach(p => { r[p.modalidad] = true; });
     res.json(r);
   } catch (e) { res.status(500).json({ error: 'Error consultando estado' }); }
 });

@@ -539,9 +539,8 @@
     if (locked) {
       const d = lockedData(m) || {};
       banner.hidden = false;
-      banner.innerHTML = '🔒 <b>Ya registraste tu Prode (' +
-        (m === 'grupos' ? 'Fase de grupos' : 'Mundial completo') + ')</b> a nombre de <b>' +
-        (d.nombre || '') + '</b>. No se puede modificar.' +
+      banner.innerHTML = '🔒 <b>Ya hay un Prode registrado (' +
+        (m === 'grupos' ? 'Fase de grupos' : 'Mundial completo') + ')</b> desde este dispositivo o red. No se puede modificar.' +
         (d.local ? ' <span class="local-note">(guardado localmente; se sincroniza cuando el backend esté activo)</span>' : '');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
@@ -584,7 +583,7 @@
       if (!s) return;
       if (typeof s.closed === 'boolean') prodeClosed = s.closed;   // verdad del servidor
       ['grupos', 'completo'].forEach(m => {
-        if (s[m]) localStorage.setItem(LOCK_KEY(m), JSON.stringify({ nombre: s[m].nombre, server: true }));
+        if (s[m]) localStorage.setItem(LOCK_KEY(m), JSON.stringify({ server: true }));
       });
       refreshLock();
     })
