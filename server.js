@@ -17,6 +17,7 @@ const {
   APIFOOTBALL_URL = 'https://v3.football.api-sports.io',
   APIFOOTBALL_KEY,
   THESPORTSDB_KEY = '3',
+  SYNC_MINUTES = '0',          // > 0 = buscar resultados solo, cada N minutos
   ADMIN_TOKEN = 'cambia-esta-clave'
 } = process.env;
 const results = require('./lib/results');
@@ -223,4 +224,31 @@ app.get('/api/admin/apifootball/status', adminOnly, async (req, res) => {
 app.use(express.static(__dirname, { extensions: ['html'] }));
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-app.listen(PORT, () => console.log('WoodTools Prode escuchando en :' + PORT));
+/* --------------------------------------------------------------------------
+   Búsqueda automática de resultados: trae SOLO los marcadores y los guarda.
+   El cálculo de puntos lo hace el backend al pedir el ranking (scorePrediction).
+   Se activa con SYNC_MINUTES > 0. (En Render free el server se duerme sin
+   tráfico; para algo 100% confiable, usar un Cron Job que pegue a /api/admin/sync.)
+   -------------------------------------------------------------------------- */
+async function autoSync() {
+  try {
+    const rep = await results.syncGroups(THESPORTSDB_KEY);
+    if (rep.matched.length) {
+      const rows = rep.matched.map(m => ({
+        match_key: m.match_key, gh: m.gh, ga: m.ga, updated_at: new Date().toISOString()
+      }));
+      await sb.from('prode_resultados').upsert(rows);
+    }
+    console.log('[autosync] resultados nuevos:', rep.matched.length, '· pendientes:', rep.pending.length);
+  } catch (e) { console.error('[autosync] error:', e.message); }
+}
+
+app.listen(PORT, () => {
+  console.log('WoodTools Prode escuchando en :' + PORT);
+  const mins = parseInt(SYNC_MINUTES, 10);
+  if (mins > 0) {
+    console.log('[autosync] activado cada ' + mins + ' min');
+    autoSync();
+    setInterval(autoSync, mins * 60000);
+  }
+});

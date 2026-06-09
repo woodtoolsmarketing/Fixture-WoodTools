@@ -22,6 +22,8 @@ services:
         sync: false          # cargar a mano en Render (secreto)
       - key: THESPORTSDB_KEY
         sync: false          # resultados 2026; "3" prueba o tu key gratis registrada
+      - key: SYNC_MINUTES
+        value: "60"          # busca resultados solo cada 60 min (0 = desactivado)
       - key: ADMIN_TOKEN
         sync: false          # tu clave del panel /admin.html
     # Render define PORT automáticamente; el server usa process.env.PORT.
