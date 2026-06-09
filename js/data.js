@@ -6,7 +6,7 @@
    las 48 selecciones y los 104 partidos en dos lugares distintos.
    ========================================================================= */
 
-window.WT = (function () {
+var WT = (function () {
   'use strict';
 
   /* ----------------------------------------------------------------------
@@ -357,13 +357,19 @@ window.WT = (function () {
      Al fallar la carga, marcamos el <img> para que el CSS muestre un
      recuadro neutro en lugar del ícono roto del navegador.
      ---------------------------------------------------------------------- */
-  document.addEventListener('error', function (e) {
-    const t = e.target;
-    if (t && t.tagName === 'IMG') t.classList.add('img-missing');
-  }, true);
+  if (typeof document !== 'undefined') {
+    document.addEventListener('error', function (e) {
+      const t = e.target;
+      if (t && t.tagName === 'IMG') t.classList.add('img-missing');
+    }, true);
+  }
 
   return {
     GROUPS, R32, R16, QF, SF, THIRD, FINAL,
     slug, flagSrc, teamChip, parseRef, matchTeam, ALL_TEAMS, numInput
   };
 })();
+
+// Isomorfo: navegador (window.WT) y Node (require) sin duplicar datos.
+if (typeof window !== 'undefined') window.WT = WT;
+if (typeof module !== 'undefined' && module.exports) module.exports = WT;

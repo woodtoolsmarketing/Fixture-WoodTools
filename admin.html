@@ -46,6 +46,12 @@
         <div class="part__head"><span class="part__num">2</span><h2 class="part__title">Cargar resultado real</h2>
           <p class="part__hint">Clave del partido: grupos <code>g-A-0</code>…<code>g-L-5</code> · llaves <code>m73</code>…<code>m102</code> · 3.º puesto <code>mTP</code> · final <code>mF</code>.</p>
         </div>
+        <div class="save-panel" style="margin-bottom:14px">
+          <h3>Sincronización automática (Mundial 2026)</h3>
+          <p class="save-sub">Trae los partidos ya jugados desde TheSportsDB y recalcula los puntajes. La fase de grupos se mapea sola; las eliminatorias podés cargarlas a mano abajo.</p>
+          <button class="btn-save" id="btn-sync">🔄 Sincronizar resultados</button>
+          <p class="save-msg" id="sync-msg"></p>
+        </div>
         <div class="save-panel">
           <div class="save-form">
             <label>Partido (match_key)<input type="text" id="mk" placeholder="g-A-0"></label>
@@ -102,6 +108,18 @@
       TOKEN = $('token').value.trim();
       sessionStorage.setItem('wt-admin-token', TOKEN);
       loadParticipants();
+    });
+
+    $('btn-sync').addEventListener('click', async () => {
+      const msg = $('sync-msg'); msg.textContent = 'Sincronizando…'; msg.className = 'save-msg';
+      const res = await api('/api/admin/sync', { method: 'POST' });
+      if (res.ok) {
+        const d = res.data;
+        msg.textContent = 'Listo: ' + d.guardados + ' resultado(s) cargado(s), ' + d.pendientes + ' pendiente(s) sin jugar.' +
+          (d.equiposSinMapear && d.equiposSinMapear.length ? ' Sin mapear: ' + d.equiposSinMapear.join(', ') : '');
+        msg.className = 'save-msg';
+        loadParticipants();
+      } else { msg.textContent = (res.data && res.data.error) || 'Error'; msg.className = 'save-msg err'; }
     });
 
     $('btn-result').addEventListener('click', async () => {

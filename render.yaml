@@ -20,6 +20,8 @@ services:
         value: https://v3.football.api-sports.io
       - key: APIFOOTBALL_KEY
         sync: false          # cargar a mano en Render (secreto)
+      - key: THESPORTSDB_KEY
+        sync: false          # resultados 2026; "3" prueba o tu key gratis registrada
       - key: ADMIN_TOKEN
         sync: false          # tu clave del panel /admin.html
     # Render define PORT automáticamente; el server usa process.env.PORT.

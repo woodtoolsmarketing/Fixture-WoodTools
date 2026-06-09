@@ -16,8 +16,10 @@ const {
   SUPABASE_SERVICE_KEY,
   APIFOOTBALL_URL = 'https://v3.football.api-sports.io',
   APIFOOTBALL_KEY,
+  THESPORTSDB_KEY = '3',
   ADMIN_TOKEN = 'cambia-esta-clave'
 } = process.env;
+const results = require('./lib/results');
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY en el entorno.');
@@ -184,6 +186,27 @@ app.post('/api/admin/resultado', adminOnly, async (req, res) => {
     if (error) throw error;
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: 'Error guardando resultado' }); }
+});
+
+// Sincroniza los resultados de la fase de grupos desde TheSportsDB (Mundial 2026)
+app.post('/api/admin/sync', adminOnly, async (req, res) => {
+  try {
+    const rep = await results.syncGroups(THESPORTSDB_KEY);
+    if (rep.matched.length) {
+      const rows = rep.matched.map(m => ({
+        match_key: m.match_key, gh: m.gh, ga: m.ga, updated_at: new Date().toISOString()
+      }));
+      const { error } = await sb.from('prode_resultados').upsert(rows);
+      if (error) throw error;
+    }
+    res.json({
+      ok: true,
+      guardados: rep.matched.length,
+      pendientes: rep.pending.length,
+      totalEventos: rep.totalEventos,
+      equiposSinMapear: rep.unmatchedTeams
+    });
+  } catch (e) { res.status(502).json({ error: 'No se pudo sincronizar: ' + e.message }); }
 });
 
 // Verifica que la API key de API-Football funcione
