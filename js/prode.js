@@ -59,7 +59,7 @@
     card.appendChild(el('div', { class: 'group-card__head' }, [
       el('span', { class: 'group-badge' }, [g.id]),
       el('div', {}, [ el('h3', { html: 'GRUPO ' + g.id + '<small>Tabla en vivo</small>' }) ]),
-      el('div', { class: 'group-logo', html: '<img src="imagenes/Logo.png" alt="WoodTools">' })
+      el('div', { class: 'group-logo', html: '<img src="imagenes/Logo.png" alt="Wood Tools">' })
     ]));
 
     const table = el('table', { class: 'standings' });
