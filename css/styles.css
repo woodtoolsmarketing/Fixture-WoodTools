@@ -659,6 +659,52 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 /* Placeholder cuando la imagen aún no existe en /imagenes */
 img.img-missing { opacity: 0; }
 
+/* =========================================================================
+   TEMA PRODE EMPLEADOS: fondo plateado metálico + carteles en rojo
+   (se activa con <body class="tema-empleados">)
+   ========================================================================= */
+body.tema-empleados::before {
+  background: linear-gradient(135deg,
+    #fbfbfc 0%, #d3d6dc 20%, #aeb3bb 42%, #c9cdd3 58%, #9ba0a9 80%, #e8eaee 100%);
+  opacity: 1;
+}
+
+/* Textos que iban en blanco sobre el fondo rojo, ahora en rojo sobre el plateado */
+body.tema-empleados .part__head { color: var(--wt-red-dark); }
+body.tema-empleados .site-footer { color: var(--wt-red-dark); opacity: 1; font-weight: 600; }
+body.tema-empleados .round-block > h3 { color: var(--wt-red-dark); border-left-color: var(--wt-red); }
+
+/* "Carteles" en rojo */
+body.tema-empleados .mode-bar,
+body.tema-empleados .notice,
+body.tema-empleados .lock-banner,
+body.tema-empleados .save-panel {
+  background: linear-gradient(135deg, var(--wt-red) 0%, var(--wt-red-dark) 100%);
+  color: #fff;
+  border-color: var(--wt-red-dark);
+  border-left-color: var(--wt-gold);
+}
+body.tema-empleados .notice b,
+body.tema-empleados .lock-banner b { color: var(--wt-gold); }
+body.tema-empleados .mode-bar__label { color: #fff; }
+body.tema-empleados .mode-bar__hint { color: rgba(255, 255, 255, .85); }
+body.tema-empleados .mode-bar__hint b { color: var(--wt-gold); }
+body.tema-empleados .lock-banner .local-note { color: rgba(255, 255, 255, .8); }
+
+/* Botones de modalidad sobre el cartel rojo */
+body.tema-empleados .mode-btn { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .45); }
+body.tema-empleados .mode-btn:hover { background: rgba(255, 255, 255, .22); color: #fff; }
+body.tema-empleados .mode-btn.active { background: #fff; color: var(--wt-red); border-color: #fff; }
+
+/* Panel de guardar: encabezado/labels en blanco, inputs claros, botón dorado */
+body.tema-empleados .save-panel { border-top-color: var(--wt-gold); }
+body.tema-empleados .save-panel h3 { color: #fff; }
+body.tema-empleados .save-sub { color: rgba(255, 255, 255, .92); }
+body.tema-empleados .save-form label { color: rgba(255, 255, 255, .9); }
+body.tema-empleados .disclaimer { color: rgba(255, 255, 255, .82); border-top-color: rgba(255, 255, 255, .3); }
+body.tema-empleados .btn-save { background: var(--wt-gold); color: var(--wt-red-dark); }
+body.tema-empleados .btn-save:hover { background: #f0d27a; }
+
 /* ===== PIE ============================================================== */
 .site-footer {
   max-width: 1280px;
