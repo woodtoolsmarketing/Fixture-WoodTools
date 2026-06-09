@@ -43,6 +43,14 @@
       </div>
 
       <div class="part active">
+        <div class="part__head">
+          <span class="part__num">1b</span><h2 class="part__title">Empleados (Prode interno)</h2>
+          <p class="part__hint" id="resumen-emp"></p>
+        </div>
+        <div class="board"><div id="tabla-emp">Cargando…</div></div>
+      </div>
+
+      <div class="part active">
         <div class="part__head"><span class="part__num">2</span><h2 class="part__title">Cargar resultado real</h2>
           <p class="part__hint">Clave del partido: grupos <code>g-A-0</code>…<code>g-L-5</code> · llaves <code>m73</code>…<code>m102</code> · 3.º puesto <code>mTP</code> · final <code>mF</code>.</p>
         </div>
@@ -87,6 +95,7 @@
       if (res.status === 401) { showGate('Clave incorrecta.'); return; }
       if (!res.ok) { $('tabla').innerHTML = 'Error cargando datos.'; return; }
       $('gate').hidden = true; $('panel').hidden = false;
+      loadEmpleados();
       const ps = res.data.participantes || [];
       $('resumen').textContent = res.data.total + ' participante(s) · ' +
         ps.filter(p => p.modalidad === 'grupos').length + ' en grupos · ' +
@@ -100,6 +109,23 @@
           '</td><td class="pts">' + (p.pts || 0) + '</td></tr>';
       });
       $('tabla').innerHTML = h + '</tbody></table>';
+    }
+
+    async function loadEmpleados() {
+      const res = await api('/api/admin/empleados');
+      if (!res.ok) { $('tabla-emp').innerHTML = 'Error cargando empleados.'; return; }
+      const ps = res.data.participantes || [];
+      $('resumen-emp').textContent = res.data.total + ' empleado(s) · ' +
+        ps.filter(p => p.modalidad === 'grupos').length + ' en grupos · ' +
+        ps.filter(p => p.modalidad === 'completo').length + ' en completo';
+      if (!ps.length) { $('tabla-emp').innerHTML = '<p class="board-empty">Sin empleados anotados todavía.</p>'; return; }
+      let h = '<table class="admin-table"><thead><tr><th>Fecha</th><th>Modalidad</th><th>Nombre</th><th>Teléfono</th><th>Pts</th></tr></thead><tbody>';
+      ps.forEach(p => {
+        h += '<tr><td>' + new Date(p.created_at).toLocaleString('es-AR') + '</td><td>' + esc(p.modalidad) +
+          '</td><td>' + esc(p.nombre) + '</td><td>' + esc(p.telefono) +
+          '</td><td class="pts">' + (p.pts || 0) + '</td></tr>';
+      });
+      $('tabla-emp').innerHTML = h + '</tbody></table>';
     }
 
     function showGate(msg) { $('panel').hidden = true; $('gate').hidden = false; $('gate-msg').textContent = msg || ''; }

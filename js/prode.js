@@ -5,7 +5,14 @@
 (function () {
   'use strict';
 
-  const KEY = 'wt-prode-v1';
+  // Variante: público (por defecto) o empleados (window.PRODE_KIND === 'empleado').
+  // Empleados: identifica por teléfono (sin IP, sin Instagram) y usa su propia API/tabla.
+  const KIND = (typeof window !== 'undefined' && window.PRODE_KIND === 'empleado') ? 'empleado' : 'publico';
+  const CFG = (KIND === 'empleado')
+    ? { key: 'wt-prode-emp-v1', api: '/api/prode-empleados', lockPrefix: 'wt-prode-emp-locked-', instagram: false, ipLock: false }
+    : { key: 'wt-prode-v1',     api: '/api/prode',           lockPrefix: 'wt-prode-locked-',     instagram: true,  ipLock: true };
+
+  const KEY = CFG.key;
   const state = loadState();
   
   function loadState() {
@@ -433,7 +440,7 @@
      ===================================================================== */
   // Base del backend. '' = mismo origen. En Render apuntará al Web Service.
   const API_BASE = '';
-  const LOCK_KEY = m => 'wt-prode-locked-' + m;
+  const LOCK_KEY = m => CFG.lockPrefix + m;
   const isLocked = m => !!localStorage.getItem(LOCK_KEY(m));
   const lockedData = m => { try { return JSON.parse(localStorage.getItem(LOCK_KEY(m))); } catch (e) { return null; } };
 
@@ -475,7 +482,7 @@
       '<div class="save-form">' +
         '<label>Nombre y apellido<input type="text" id="f-' + m + '-nombre" autocomplete="name" placeholder="Tu nombre"></label>' +
         '<label>Teléfono<input type="tel" id="f-' + m + '-tel" autocomplete="tel" placeholder="Ej: 11 5555-5555"></label>' +
-        '<label>Usuario de Instagram<input type="text" id="f-' + m + '-ig" placeholder="@usuario"></label>' +
+        (CFG.instagram ? '<label>Usuario de Instagram<input type="text" id="f-' + m + '-ig" placeholder="@usuario"></label>' : '') +
       '</div>' +
       '<button class="btn-save" id="btn-save-' + m + '">Guardar mi Prode</button>' +
       '<p class="save-msg" id="msg-' + m + '"></p>' +
@@ -496,12 +503,17 @@
     if (prodeClosed) { msg.textContent = 'El registro cerró: el Mundial ya comenzó.'; msg.className = 'save-msg err'; refreshLock(); return; }
     const nombre = document.getElementById('f-' + m + '-nombre').value.trim();
     const tel    = document.getElementById('f-' + m + '-tel').value.trim();
-    const ig     = document.getElementById('f-' + m + '-ig').value.trim();
-    if (!nombre || !tel || !ig) { msg.textContent = 'Completá nombre, teléfono e Instagram.'; msg.className = 'save-msg err'; return; }
+    const igEl   = document.getElementById('f-' + m + '-ig');
+    const ig     = igEl ? igEl.value.trim() : '';
+    if (!nombre || !tel || (CFG.instagram && !ig)) {
+      msg.textContent = CFG.instagram ? 'Completá nombre, teléfono e Instagram.' : 'Completá nombre y teléfono.';
+      msg.className = 'save-msg err'; return;
+    }
     msg.textContent = 'Guardando…'; msg.className = 'save-msg';
-    const payload = { mode: m, nombre, telefono: tel, instagram: ig, prediction: gatherPrediction(m) };
+    const payload = { mode: m, nombre, telefono: tel, prediction: gatherPrediction(m) };
+    if (CFG.instagram) payload.instagram = ig;
     try {
-      const r = await fetch(API_BASE + '/api/prode/submit', {
+      const r = await fetch(API_BASE + CFG.api + '/submit', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
       const data = await r.json().catch(() => ({}));
@@ -577,14 +589,16 @@
   applyMode(state.mode || 'completo');   // modalidad por defecto
 
   // Bloqueo por IP desde el servidor: si esta IP ya participó, se bloquea.
-  fetch(API_BASE + '/api/prode/status')
+  fetch(API_BASE + CFG.api + '/status')
     .then(r => (r.ok ? r.json() : null))
     .then(s => {
       if (!s) return;
       if (typeof s.closed === 'boolean') prodeClosed = s.closed;   // verdad del servidor
-      ['grupos', 'completo'].forEach(m => {
-        if (s[m]) localStorage.setItem(LOCK_KEY(m), JSON.stringify({ server: true }));
-      });
+      if (CFG.ipLock) {   // bloqueo por IP solo en el Prode público
+        ['grupos', 'completo'].forEach(m => {
+          if (s[m]) localStorage.setItem(LOCK_KEY(m), JSON.stringify({ server: true }));
+        });
+      }
       refreshLock();
     })
     .catch(() => {});

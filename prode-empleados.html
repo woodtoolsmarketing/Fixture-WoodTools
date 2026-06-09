@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Prode Empleados · Mundial 2026 · Wood Tools</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script>document.addEventListener('error',function(e){var t=e.target;if(t&&t.tagName==='IMG')t.classList.add('img-missing');},true);</script>
+</head>
+<body>
+
+  <!-- ====================== ENCABEZADO ====================== -->
+  <header class="site-header">
+    <img class="deco-tool deco-tool--tl" src="imagenes/herramientas/Sierra.png" alt="">
+    <img class="deco-tool deco-tool--tr" src="imagenes/herramientas/Fresa.png" alt="">
+    <img class="deco-tool deco-tool--bl" src="imagenes/herramientas/Mechas.png" alt="">
+    <img class="deco-tool deco-tool--br" src="imagenes/herramientas/Cuchillas.png" alt="">
+
+    <div class="site-header__row">
+      <div class="brand-logo">
+        <img src="imagenes/Logo.png" alt="Wood Tools">
+      </div>
+      <div class="site-header__titles">
+        <p class="site-header__kicker">Wood Tools S.R.L. · Prode interno</p>
+        <h1>Prode Empleados</h1>
+        <p class="site-header__sub">Exclusivo para empleados de Wood Tools. Predecí y competí por la herramienta.</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====================== BARRA DE NAVEGACIÓN ====================== -->
+  <nav class="toolbar">
+    <div class="toolbar__group" id="tabs">
+      <button class="tab-btn active" data-part="1">1 · Grupos A–F</button>
+      <button class="tab-btn" data-part="2">2 · Grupos G–L</button>
+      <button class="tab-btn" data-part="3">3 · Dieciseisavos</button>
+      <button class="tab-btn" data-part="4">4 · Octavos → 3.º puesto</button>
+      <button class="tab-btn" data-part="5">5 · Final</button>
+    </div>
+    <span class="toolbar__spacer"></span>
+    <div class="toolbar__group">
+      <a class="page-link current">Prode Empleados</a>
+      <a class="page-link" href="resultados-empleados.html">Resultados</a>
+    </div>
+  </nav>
+
+  <!-- Selector de modalidad -->
+  <div class="mode-bar">
+    <span class="mode-bar__label">Elegí tu modalidad de Prode:</span>
+    <button class="mode-btn" data-mode="grupos">🥅 Fase de grupos</button>
+    <button class="mode-btn" data-mode="completo">🏆 Mundial completo</button>
+    <span class="mode-bar__hint" id="mode-hint">Podés jugar las dos. Una vez que guardás, no se puede modificar. ⏰ <b>El registro cierra el jueves 11/06 a las 15:50</b> (cuando arranca el Mundial).</span>
+  </div>
+
+  <div class="lock-banner" id="lock-banner" hidden></div>
+
+  <div class="notice">
+    <b>¿Cómo se juega?</b> Es el Prode <b>interno de Wood Tools</b>: te identificás con tu <b>número de celular</b>.
+    Elegí una modalidad, cargá tus pronósticos y tocá <b>Guardar</b>. Puntuación por partido:
+    <b>3 pts</b> resultado exacto, <b>1 pt</b> acertar el ganador o el empate, <b>0</b> si no.
+    Movete entre resultados con <b>Enter</b> o las flechas <b>← → ↑ ↓</b>.
+  </div>
+
+  <!-- ====================== CONTENIDO (5 PARTES) ====================== -->
+  <main>
+    <section class="part active" data-part="1">
+      <div class="part__head">
+        <span class="part__num">1</span>
+        <h2 class="part__title">Fase de grupos · Grupos A – F</h2>
+        <p class="part__hint">La tabla se ordena por puntos, diferencia de gol y goles a favor.</p>
+      </div>
+      <div class="groups-grid" id="groups-1"></div>
+    </section>
+
+    <section class="part" data-part="2">
+      <div class="part__head">
+        <span class="part__num">2</span>
+        <h2 class="part__title">Fase de grupos · Grupos G – L</h2>
+        <p class="part__hint">La tabla se ordena por puntos, diferencia de gol y goles a favor.</p>
+      </div>
+      <div class="groups-grid" id="groups-2"></div>
+      <div class="save-panel" id="save-grupos"></div>
+    </section>
+
+    <section class="part" data-part="3">
+      <div class="part__head">
+        <span class="part__num">3</span>
+        <h2 class="part__title">Dieciseisavos de final</h2>
+        <p class="part__hint">Los 1.º y 2.º entran solos y los mejores terceros se acomodan en su llave.</p>
+      </div>
+      <div class="round-grid" id="round-r32"></div>
+    </section>
+
+    <section class="part" data-part="4">
+      <div class="part__head">
+        <span class="part__num">4</span>
+        <h2 class="part__title">Octavos · Cuartos · Semis · 3.º y 4.º puesto</h2>
+        <p class="part__hint">Cargá el marcador y el ganador avanza automáticamente al siguiente cruce.</p>
+      </div>
+      <div class="round-block"><h3>Octavos de final</h3><div class="round-grid" id="round-r16"></div></div>
+      <div class="round-block"><h3>Cuartos de final</h3><div class="round-grid" id="round-qf"></div></div>
+      <div class="round-block"><h3>Semifinales</h3><div class="round-grid" id="round-sf"></div></div>
+      <div class="round-block"><h3>Tercer y cuarto puesto</h3><div class="round-grid" id="round-third"></div></div>
+    </section>
+
+    <section class="part" data-part="5">
+      <div class="part__head">
+        <span class="part__num">5</span>
+        <h2 class="part__title">La Gran Final</h2>
+        <p class="part__hint">Domingo 19 de julio · 16:00 · MetLife Stadium, Nueva York / Nueva Jersey.</p>
+      </div>
+      <div class="final-wrap" id="final-wrap"></div>
+      <div class="save-panel" id="save-completo"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    WOOD TOOLS S.R.L. · Prode interno · Copa Mundial de la FIFA 2026
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script>window.PRODE_KIND = 'empleado';</script>
+  <script src="js/prode.js"></script>
+</body>
+</html>

@@ -165,6 +165,56 @@ app.get('/api/leaderboard', async (req, res) => {
 });
 
 /* =========================================================================
+   API PRODE EMPLEADOS (solo Wood Tools) — identifica por teléfono, sin IP/Instagram
+   ========================================================================= */
+
+// Solo necesita saber si el registro está abierto/cerrado (no hay bloqueo por IP).
+app.get('/api/prode-empleados/status', (_req, res) => {
+  res.json({ closed: isClosed(), deadline: DEADLINE_MS, now: Date.now() });
+});
+
+// Guardar un Prode de empleado (una vez por teléfono y modalidad)
+app.post('/api/prode-empleados/submit', async (req, res) => {
+  try {
+    if (isClosed()) return res.status(403).json({ error: 'El registro del Prode cerró: el Mundial ya comenzó.' });
+    const { mode, nombre, telefono, prediction } = req.body || {};
+    if (!['grupos', 'completo'].includes(mode)) return res.status(400).json({ error: 'Modalidad inválida' });
+    const nom = norm.nombre(nombre), tel = norm.tel(telefono);
+    if (!nom || tel.length < 6) return res.status(400).json({ error: 'Completá nombre y teléfono válidos.' });
+    if (!prediction || typeof prediction !== 'object') return res.status(400).json({ error: 'Falta el pronóstico.' });
+
+    const { data: dups, error: dErr } = await sb.from('prode_empleados')
+      .select('id').eq('modalidad', mode).eq('telefono', tel);
+    if (dErr) throw dErr;
+    if (dups && dups.length) return res.status(409).json({ error: 'Ese número de teléfono ya participó en esta modalidad.' });
+
+    const { error: iErr } = await sb.from('prode_empleados').insert({ modalidad: mode, nombre: nom, telefono: tel, prediction });
+    if (iErr) {
+      if (iErr.code === '23505') return res.status(409).json({ error: 'Ese número de teléfono ya participó en esta modalidad.' });
+      throw iErr;
+    }
+    res.json({ ok: true });
+  } catch (e) { console.error('emp submit', e); res.status(500).json({ error: 'No se pudo guardar. Probá de nuevo.' }); }
+});
+
+// Ranking de empleados (solo nombre + puntos)
+app.get('/api/prode-empleados/leaderboard', async (req, res) => {
+  try {
+    const mode = ['grupos', 'completo'].includes(req.query.mode) ? req.query.mode : 'completo';
+    const [{ data, error }, resultsMap] = await Promise.all([
+      sb.from('prode_empleados').select('nombre,prediction').eq('modalidad', mode),
+      getResultsMap()
+    ]);
+    if (error) throw error;
+    const tabla = (data || []).map(p => {
+      const s = scorePrediction(p.prediction, resultsMap);
+      return { nombre: p.nombre, puntos: s.pts, aciertos: s.aciertos };
+    }).sort((a, b) => b.puntos - a.puntos || b.aciertos - a.aciertos || a.nombre.localeCompare(b.nombre));
+    res.json({ mode, jugados: Object.keys(resultsMap).length, tabla });
+  } catch (e) { res.status(500).json({ error: 'Error armando el ranking' }); }
+});
+
+/* =========================================================================
    API ADMIN (requiere header x-admin-token o ?token=)
    ========================================================================= */
 
@@ -179,6 +229,19 @@ app.get('/api/admin/participantes', adminOnly, async (req, res) => {
     const rows = (data || []).map(p => ({
       ...p, ...scorePrediction(p.prediction, resultsMap)
     }));
+    res.json({ total: rows.length, participantes: rows });
+  } catch (e) { res.status(500).json({ error: 'Error' }); }
+});
+
+// Empleados con sus datos completos
+app.get('/api/admin/empleados', adminOnly, async (req, res) => {
+  try {
+    const [{ data, error }, resultsMap] = await Promise.all([
+      sb.from('prode_empleados').select('*').order('created_at', { ascending: true }),
+      getResultsMap()
+    ]);
+    if (error) throw error;
+    const rows = (data || []).map(p => ({ ...p, ...scorePrediction(p.prediction, resultsMap) }));
     res.json({ total: rows.length, participantes: rows });
   } catch (e) { res.status(500).json({ error: 'Error' }); }
 });
