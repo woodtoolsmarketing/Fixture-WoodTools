@@ -330,6 +330,25 @@ input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
+/* ===== Tabla "Mejores terceros" ======================================== */
+.thirds-card {
+  margin-top: 22px;
+  background: var(--wt-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.thirds-card__head {
+  background: linear-gradient(135deg, var(--wt-red) 0%, var(--wt-red-dark) 100%);
+  color: #fff;
+  font-weight: 800;
+  padding: 12px 16px;
+  letter-spacing: .04em;
+  font-size: 1.05rem;
+}
+.thirds-table { padding: 4px 8px 6px; }
+.thirds-note { font-size: .72rem; color: var(--wt-muted); padding: 2px 16px 12px; margin: 0; }
+
 /* ===== LLAVES / ELIMINATORIAS ========================================== */
 .round-grid {
   display: grid;

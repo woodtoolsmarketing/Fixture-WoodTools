@@ -46,9 +46,10 @@
   /* =====================================================================
      REGISTROS de DOM
      ===================================================================== */
-  const groupReg = [];   
-  const koReg = [];      
-  let finalReg = null;   
+  const groupReg = [];
+  const koReg = [];
+  let finalReg = null;
+  const thirdsTbodies = [];   // cuerpos de la tabla "Mejores terceros" (una bajo cada pestaña)
 
   /* =====================================================================
      1) FASE DE GRUPOS
@@ -95,14 +96,16 @@
      ===================================================================== */
   function computeStanding(g) {
     const stat = {};
-    g.teams.forEach((t, i) => stat[t] = { team: t, idx: i, pj: 0, pts: 0, gf: 0, gc: 0 });
+    g.teams.forEach((t, i) => stat[t] = { team: t, idx: i, pj: 0, pts: 0, gf: 0, gc: 0, pg: 0, pe: 0, pp: 0 });
     g.matches.forEach((m, idx) => {
       const h = num(state.gs['g-' + g.id + '-' + idx + '-h']);
       const a = num(state.gs['g-' + g.id + '-' + idx + '-a']);
       if (h === null || a === null) return;
       const H = stat[m.home], A = stat[m.away];
       H.pj++; A.pj++; H.gf += h; H.gc += a; A.gf += a; A.gc += h;
-      if (h > a) { H.pts += 3; } else if (a > h) { A.pts += 3; } else { H.pts++; A.pts++; }
+      if (h > a) { H.pts += 3; H.pg++; A.pp++; }
+      else if (a > h) { A.pts += 3; A.pg++; H.pp++; }
+      else { H.pts++; A.pts++; H.pe++; A.pe++; }
     });
     return Object.values(stat)
       .map(s => (s.gd = s.gf - s.gc, s))
@@ -110,12 +113,29 @@
   }
 
   function computeThirds(standings) {
-    const thirds = WT.GROUPS.map(g => {
-      const s = standings[g.id][2];
-      return { group: g.id, team: s.team, pts: s.pts, gd: s.gd, gf: s.gf };
-    }).sort((x, y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf || (x.group < y.group ? -1 : 1));
-    const qualified = thirds.slice(0, 8);
+    const thirds = WT.GROUPS.map(g => Object.assign({ group: g.id }, standings[g.id][2]))
+      .sort((x, y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf || (x.group < y.group ? -1 : 1));
+    const qualified = thirds.slice(0, 8);   // ordenados de MEJOR a PEOR
     return { all: thirds, qualified, groups: new Set(qualified.map(t => t.group)) };
+  }
+
+  // Tabla "Mejores terceros": los 12 terceros ordenados; los 8 primeros clasifican.
+  function renderThirdsTable(thirds, tbody) {
+    tbody.innerHTML = '';
+    thirds.all.forEach((s, i) => {
+      const inTop8 = i < 8;
+      const tr = el('tr', { class: inTop8 ? 'qual' : 'elim' });
+      tr.appendChild(el('td', { class: 'pos' }, [String(i + 1)]));
+      tr.appendChild(el('td', { html: WT.teamChip(s.team, 'away') +
+        ' <span class="qtag qtag--' + (inTop8 ? 'in' : 'out') + '">' + s.group + '</span>' }));
+      tr.appendChild(el('td', {}, [String(s.pj)]));
+      tr.appendChild(el('td', {}, [String(s.pg)]));
+      tr.appendChild(el('td', {}, [String(s.pe)]));
+      tr.appendChild(el('td', {}, [String(s.pp)]));
+      tr.appendChild(el('td', {}, [(s.gd > 0 ? '+' : '') + s.gd]));
+      tr.appendChild(el('td', { class: 'pts' }, [String(s.pts)]));
+      tbody.appendChild(tr);
+    });
   }
 
   function renderStandingRows(g, arr, thirds, tbody) {
@@ -310,25 +330,26 @@
     WT.GROUPS.forEach(g => standings[g.id] = computeStanding(g));
     const thirds = computeThirds(standings);
     groupReg.forEach(r => renderStandingRows(r.g, standings[r.g.id], thirds, r.tbody));
+    thirdsTbodies.forEach(tb => renderThirdsTable(thirds, tb));   // tabla de mejores terceros
 
     const thirdTeamOf = grp => standings[grp][2].team;
 
-    // --- ASIGNACIÓN AUTOMÁTICA Y VÁLIDA DE LOS 8 MEJORES TERCEROS ---
-    // Cada "mejor 3.º" se ubica en una llave que lo admita, respetando la
-    // elegibilidad (3 A/B/C/D, etc.), de modo que NINGUNA quede sin definir.
-    const qGroups = thirds.qualified.map(t => t.group);
-    const thirdSlots = [];
-    koReg.forEach(entry => {
-      if (entry.home.isThird) thirdSlots.push({ key: entry.n + '-h', eligible: entry.home.refInfo.groups });
-      if (entry.away.isThird) thirdSlots.push({ key: entry.n + '-a', eligible: entry.away.refInfo.groups });
+    // --- CRUCE DE MEJORES TERCEROS (regla pedida) ---
+    // El MEJOR 3.º enfrenta al PEOR 1.º; el PEOR 3.º al MEJOR 1.º, y así con todos,
+    // entre los ocho 1.º que en el cuadro juegan contra un mejor tercero.
+    const cmp = (a, b) => (b.pts - a.pts) || (b.gd - a.gd) || (b.gf - a.gf) || (a.team < b.team ? -1 : 1);
+    const slots1ros = koReg.filter(e => e.away.isThird).map(e => {
+      const p = WT.parseRef(e.home.ref);                  // el local siempre es un '1X'
+      const w = (p.type === 'pos' && standings[p.group]) ? standings[p.group][p.pos - 1] : null;
+      return { key: e.n + '-a', winner: w };
+    }).filter(s => s.winner);
+    slots1ros.sort((x, y) => cmp(x.winner, y.winner));    // 1.º ordenados de mejor a peor
+    const thirdAssign = {};                               // { 'n-a' -> grupo del 3.º }
+    const q = thirds.qualified;                           // 3.º ordenados de mejor a peor
+    slots1ros.forEach((slot, i) => {
+      const t = q[q.length - 1 - i];                      // i-ésimo mejor 1.º -> i-ésimo peor 3.º
+      if (t) thirdAssign[slot.key] = t.group;
     });
-    const currentThirdsStr = qGroups.slice().sort().join('');
-    // recalculamos solo si cambió el set de clasificados o el mapeo quedó inválido
-    if (state.lastThirdsStr !== currentThirdsStr ||
-        !validThirds(state.third, new Set(qGroups), thirdSlots)) {
-      state.lastThirdsStr = currentThirdsStr;
-      state.third = assignThirds(qGroups, thirdSlots);
-    }
 
     const winner = {}, loser = {};
     function resolveRef(ref) {
@@ -340,9 +361,9 @@
       return null;
     }
 
-    // El tercero se resuelve leyendo el mapeo aleatorio que quedó guardado
+    // El tercero se resuelve leyendo el cruce calculado (mejor 3.º vs peor 1.º…)
     function resolveThird(side) {
-      const g = state.third[side.n + '-' + side.who.charAt(0)];
+      const g = thirdAssign[side.n + '-' + side.who.charAt(0)];
       return g ? thirdTeamOf(g) : null;
     }
 
@@ -449,6 +470,23 @@
 
   WT.GROUPS.slice(0, 6).forEach(g => document.getElementById('groups-1').appendChild(renderGroup(g)));
   WT.GROUPS.slice(6).forEach(g => document.getElementById('groups-2').appendChild(renderGroup(g)));
+
+  // Tabla "Mejores terceros" al pie de ambas pestañas de grupos
+  ['thirds-1', 'thirds-2'].forEach(id => {
+    const cont = document.getElementById(id);
+    if (!cont) return;
+    const card = el('div', { class: 'thirds-card' });
+    card.appendChild(el('div', { class: 'thirds-card__head' }, ['🥉 Mejores terceros']));
+    const table = el('table', { class: 'standings thirds-table' });
+    table.appendChild(el('thead', { html:
+      '<tr><th>#</th><th>Selección</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>DG</th><th>Pts</th></tr>' }));
+    const tb = el('tbody'); table.appendChild(tb); card.appendChild(table);
+    card.appendChild(el('p', { class: 'thirds-note' }, [
+      'Los 8 mejores terceros (verde) clasifican; los 4 últimos (rojo) quedan afuera. La letra es el grupo.']));
+    cont.appendChild(card);
+    thirdsTbodies.push(tb);
+  });
+
   renderRound('round-r32', WT.R32);
   renderRound('round-r16', WT.R16);
   renderRound('round-qf', WT.QF);
