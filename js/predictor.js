@@ -97,19 +97,46 @@
   function computeStanding(g) {
     const stat = {};
     g.teams.forEach((t, i) => stat[t] = { team: t, idx: i, pj: 0, pts: 0, gf: 0, gc: 0, pg: 0, pe: 0, pp: 0 });
+    const played = [];
     g.matches.forEach((m, idx) => {
       const h = num(state.gs['g-' + g.id + '-' + idx + '-h']);
       const a = num(state.gs['g-' + g.id + '-' + idx + '-a']);
       if (h === null || a === null) return;
+      played.push({ home: m.home, away: m.away, h, a });
       const H = stat[m.home], A = stat[m.away];
       H.pj++; A.pj++; H.gf += h; H.gc += a; A.gf += a; A.gc += h;
       if (h > a) { H.pts += 3; H.pg++; A.pp++; }
       else if (a > h) { A.pts += 3; A.pg++; H.pp++; }
       else { H.pts++; A.pts++; H.pe++; A.pe++; }
     });
-    return Object.values(stat)
-      .map(s => (s.gd = s.gf - s.gc, s))
-      .sort((x, y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf || x.idx - y.idx);
+    Object.values(stat).forEach(s => s.gd = s.gf - s.gc);
+
+    // Puntos en los partidos jugados SOLO entre un conjunto de equipos (head-to-head).
+    function h2h(set) {
+      const hp = {}; set.forEach(t => hp[t] = 0);
+      played.forEach(m => {
+        if (!set.has(m.home) || !set.has(m.away)) return;
+        if (m.h > m.a) hp[m.home] += 3;
+        else if (m.a > m.h) hp[m.away] += 3;
+        else { hp[m.home]++; hp[m.away]++; }
+      });
+      return hp;
+    }
+
+    // Desempate: puntos → (entre los igualados) resultado entre ellos → DG → GF → orden inicial.
+    const arr = Object.values(stat).sort((x, y) => y.pts - x.pts);
+    const out = [];
+    for (let i = 0; i < arr.length;) {
+      let j = i; while (j < arr.length && arr[j].pts === arr[i].pts) j++;
+      const run = arr.slice(i, j);
+      if (run.length > 1) {
+        const hp = h2h(new Set(run.map(s => s.team)));
+        run.sort((x, y) => (hp[y.team] - hp[x.team]) || (y.gd - x.gd) || (y.gf - x.gf) || (x.idx - y.idx));
+      }
+      out.push.apply(out, run);
+      i = j;
+    }
+    return out;
   }
 
   function computeThirds(standings) {
@@ -282,44 +309,30 @@
     finalReg = { home, away, champ, champLabel, champName };
   }
 
-  /* Empareja cada "mejor 3.º" con una llave que lo admita (respeta la
-     elegibilidad "3 A/B/C/D", etc.) usando caminos aumentantes. Devuelve
-     { 'n-a' -> grupo }. Completa siempre las 8 llaves. */
-  function assignThirds(qGroups, slots) {
-    const qset = new Set(qGroups);
-    const byKey = {}; slots.forEach(s => { byKey[s.key] = s; });
-    const mSlot = {}, mGroup = {};
-    function aug(slot, seen) {
-      for (let i = 0; i < slot.eligible.length; i++) {
-        const g = slot.eligible[i];
-        if (!qset.has(g) || seen.has(g)) continue;
-        seen.add(g);
-        const occ = mGroup[g];
-        if (occ === undefined || aug(byKey[occ], seen)) {
-          mSlot[slot.key] = g; mGroup[g] = slot.key;
-          return true;
-        }
-      }
-      return false;
-    }
-    slots.forEach(s => { if (mSlot[s.key] === undefined) aug(s, new Set()); });
-    // Red de seguridad: si por una combinación rara quedara alguna sin
-    // emparejar, la completamos con cualquier tercero libre (nunca vacía).
-    const used = new Set(Object.keys(mSlot).map(k => mSlot[k]));
-    const free = qGroups.filter(g => !used.has(g));
-    slots.forEach(s => { if (mSlot[s.key] === undefined && free.length) mSlot[s.key] = free.shift(); });
-    return mSlot;
-  }
-
-  /* ¿El mapeo guardado sigue siendo válido (completo, elegible y sin repetir)? */
-  function validThirds(third, qset, slots) {
-    const used = new Set();
-    for (let i = 0; i < slots.length; i++) {
-      const g = third[slots[i].key];
-      if (!g || !qset.has(g) || slots[i].eligible.indexOf(g) === -1 || used.has(g)) return false;
-      used.add(g);
-    }
-    return true;
+  /* Asigna los 8 mejores terceros a las 8 llaves "1.º vs 3.º" siguiendo, lo más posible,
+     la regla "mejor 3.º vs peor 1.º" (orden inverso), pero SIN cruzar a dos equipos que
+     ya jugaron en la fase de grupos (un 3.º no puede ir a la llave del 1.º de su mismo
+     grupo). Devuelve { 'n-a' -> grupo del 3.º }.
+       slots:   ordenados de mejor a peor 1.º, con { key, firstGroup }.
+       qThirds: terceros clasificados ordenados de mejor a peor. */
+  function assignThirdsNoRematch(slots, qThirds) {
+    const n = slots.length;
+    const want = i => n - 1 - i;                              // i-ésimo mejor 1.º quiere el i-ésimo peor 3.º
+    const cost = (i, j) => Math.abs(j - want(i));             // cuánto se aleja de esa regla
+    const banned = (i, j) => slots[i].firstGroup === qThirds[j].group;  // revancha de grupos
+    const used = new Array(n).fill(false), cur = new Array(n);
+    let best = null, bestCost = Infinity;
+    (function bt(i, acc) {
+      if (acc >= bestCost) return;                            // poda
+      if (i === n) { best = cur.slice(); bestCost = acc; return; }
+      const opts = [];
+      for (let j = 0; j < n; j++) if (!used[j] && !banned(i, j)) opts.push(j);
+      opts.sort((a, b) => cost(i, a) - cost(i, b));           // probar primero lo más cercano a la regla
+      for (const j of opts) { used[j] = true; cur[i] = j; bt(i + 1, acc + cost(i, j)); used[j] = false; }
+    })(0, 0);
+    const map = {};
+    if (best) slots.forEach((s, i) => { map[s.key] = qThirds[best[i]].group; });
+    return map;
   }
 
   /* =====================================================================
@@ -341,15 +354,11 @@
     const slots1ros = koReg.filter(e => e.away.isThird).map(e => {
       const p = WT.parseRef(e.home.ref);                  // el local siempre es un '1X'
       const w = (p.type === 'pos' && standings[p.group]) ? standings[p.group][p.pos - 1] : null;
-      return { key: e.n + '-a', winner: w };
+      return { key: e.n + '-a', firstGroup: p.group, winner: w };
     }).filter(s => s.winner);
     slots1ros.sort((x, y) => cmp(x.winner, y.winner));    // 1.º ordenados de mejor a peor
-    const thirdAssign = {};                               // { 'n-a' -> grupo del 3.º }
-    const q = thirds.qualified;                           // 3.º ordenados de mejor a peor
-    slots1ros.forEach((slot, i) => {
-      const t = q[q.length - 1 - i];                      // i-ésimo mejor 1.º -> i-ésimo peor 3.º
-      if (t) thirdAssign[slot.key] = t.group;
-    });
+    // Mejor 3.º vs peor 1.º (y así con todos), evitando repetir cruces de la fase de grupos.
+    const thirdAssign = assignThirdsNoRematch(slots1ros, thirds.qualified);
 
     const winner = {}, loser = {};
     function resolveRef(ref) {
