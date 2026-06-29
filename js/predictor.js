@@ -15,9 +15,10 @@
       gs:    s.gs    || {},   // goles de grupos          g-A-0-h / g-A-0-a
       ks:    s.ks    || {},   // goles de eliminatorias   m73-h / m73-a
       pen:   s.pen   || {},   // ganador por penales      m89 -> 'home'|'away'
-      third: s.third || {},   // mapping automático:      '75-a' -> 'B'
+      third: s.third || {},   // (legado, sin uso)
+      thirdPick: s.thirdPick || {},  // elecciones MANUALES de 3.º: '75-a' -> 'B' (vacío = automático)
       flags: s.flags || {},   // banderas varias           { finalPen: true }
-      lastThirdsStr: s.lastThirdsStr || '' // guarda el set actual de 3.º
+      lastThirdsStr: s.lastThirdsStr || '' // (legado, sin uso)
     };
   }
   const save = () => localStorage.setItem(KEY, JSON.stringify(state));
@@ -204,13 +205,32 @@
 
     const nameEl = el('span', { class: 'tname tname--empty' }, ['—']);
     team.appendChild(nameEl);
+
+    // Para los "mejores 3.º": selector para elegirlo a mano (por defecto, automático).
+    let select = null;
+    if (isThird) {
+      const key = match.n + '-a';
+      select = el('select', { class: 'third-select', 'aria-label': 'Elegí el mejor 3.º' });
+      select.addEventListener('change', () => {
+        const g = select.value;
+        if (g) {
+          // el 3.º es único: si estaba forzado en otra llave, lo libero
+          Object.keys(state.thirdPick).forEach(k => { if (k !== key && state.thirdPick[k] === g) delete state.thirdPick[k]; });
+          state.thirdPick[key] = g;
+        } else {
+          delete state.thirdPick[key];   // vuelve a automático
+        }
+        save(); update();
+      });
+      team.appendChild(select);
+    }
     side.appendChild(team);
 
     const sc = el('div', { class: 'ko-score' });
     sc.appendChild(scoreInput(state.ks, 'm' + match.n + '-' + (who === 'home' ? 'h' : 'a')));
     side.appendChild(sc);
 
-    return { who, ref, refInfo, isThird, n: match.n, sideEl: side, img, nameEl };
+    return { who, ref, refInfo, isThird, n: match.n, sideEl: side, img, nameEl, select };
   }
 
   function buildKoCard(match) {
@@ -315,16 +335,27 @@
      grupo). Devuelve { 'n-a' -> grupo del 3.º }.
        slots:   ordenados de mejor a peor 1.º, con { key, firstGroup }.
        qThirds: terceros clasificados ordenados de mejor a peor. */
-  function assignThirdsNoRematch(slots, qThirds) {
+  function assignThirdsNoRematch(slots, qThirds, forced) {
     const n = slots.length;
     const want = i => n - 1 - i;                              // i-ésimo mejor 1.º quiere el i-ésimo peor 3.º
     const cost = (i, j) => Math.abs(j - want(i));             // cuánto se aleja de esa regla
     const banned = (i, j) => slots[i].firstGroup === qThirds[j].group;  // revancha de grupos
-    const used = new Array(n).fill(false), cur = new Array(n);
+    const idxOf = {}; qThirds.forEach((t, j) => idxOf[t.group] = j);
+    const used = new Array(n).fill(false), fixed = new Array(n).fill(-1);
+    // Fijo las elecciones MANUALES válidas (quedan clavadas; el resto se acomoda solo).
+    if (forced) slots.forEach((s, i) => {
+      const g = forced[s.key];
+      if (g == null) return;
+      const j = idxOf[g];
+      if (j === undefined || used[j] || banned(i, j)) return;
+      fixed[i] = j; used[j] = true;
+    });
+    const cur = new Array(n);
     let best = null, bestCost = Infinity;
     (function bt(i, acc) {
       if (acc >= bestCost) return;                            // poda
       if (i === n) { best = cur.slice(); bestCost = acc; return; }
+      if (fixed[i] !== -1) { cur[i] = fixed[i]; bt(i + 1, acc + cost(i, fixed[i])); return; }
       const opts = [];
       for (let j = 0; j < n; j++) if (!used[j] && !banned(i, j)) opts.push(j);
       opts.sort((a, b) => cost(i, a) - cost(i, b));           // probar primero lo más cercano a la regla
@@ -357,8 +388,33 @@
       return { key: e.n + '-a', firstGroup: p.group, winner: w };
     }).filter(s => s.winner);
     slots1ros.sort((x, y) => cmp(x.winner, y.winner));    // 1.º ordenados de mejor a peor
-    // Mejor 3.º vs peor 1.º (y así con todos), evitando repetir cruces de la fase de grupos.
-    const thirdAssign = assignThirdsNoRematch(slots1ros, thirds.qualified);
+
+    // Limpio elecciones manuales que ya no valen (3.º que no clasifica, revancha o repetido).
+    const qSet = new Set(thirds.qualified.map(t => t.group));
+    const seenPick = new Set();
+    slots1ros.forEach(s => {
+      const g = state.thirdPick[s.key];
+      if (g && (!qSet.has(g) || g === s.firstGroup || seenPick.has(g))) delete state.thirdPick[s.key];
+      else if (g) seenPick.add(g);
+    });
+
+    // Mejor 3.º vs peor 1.º (sin revancha) RESPETANDO lo que hayas forzado a mano.
+    const thirdAssign = assignThirdsNoRematch(slots1ros, thirds.qualified, state.thirdPick);
+
+    // Refresco los selectores de 3.º (opciones = terceros clasificados, sin el de revancha).
+    const fgOf = {}; slots1ros.forEach(s => fgOf[s.key] = s.firstGroup);
+    koReg.forEach(e => {
+      if (!e.away.isThird || !e.away.select) return;
+      const key = e.away.n + '-a', sel = e.away.select, fg = fgOf[key];
+      sel.innerHTML = '';
+      const auto = thirdAssign[key];
+      sel.appendChild(el('option', { value: '' }, ['🔀 Auto' + (auto ? ': ' + thirdTeamOf(auto) : '')]));
+      thirds.qualified.forEach(t => {
+        if (t.group === fg) return;   // no ofrecer una revancha
+        sel.appendChild(el('option', { value: t.group }, [thirdTeamOf(t.group) + ' · Gr. ' + t.group]));
+      });
+      sel.value = state.thirdPick[key] || '';
+    });
 
     const winner = {}, loser = {};
     function resolveRef(ref) {

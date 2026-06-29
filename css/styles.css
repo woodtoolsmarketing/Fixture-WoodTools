@@ -395,9 +395,10 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   padding: 6px 0;
 }
 .ko-side + .ko-side { border-top: 1px dashed var(--wt-line); }
-.ko-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ko-team { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
 .ko-team .ko-input { flex: 1 1 auto; min-width: 60px; }
 .ko-team .ref-tag { margin-left: 0; }
+.ko-team .third-select { flex: 1 1 100%; margin-top: 4px; font-size: .78rem; padding: 4px 6px; }
 .ko-side.win .tname { color: var(--wt-green); font-weight: 800; }
 .ko-side.win .third-select { color: var(--wt-green); border-color: var(--wt-green); font-weight: 800; }
 .ko-side.win .ko-pick { background: var(--wt-green); border-color: var(--wt-green); color:#fff; }
