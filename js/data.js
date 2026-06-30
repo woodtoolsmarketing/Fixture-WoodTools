@@ -184,16 +184,16 @@ var WT = (function () {
     { n: 88, date: 'Vie 03/07', time: '16:00', home: '1K', away: '3 D/E/I/J/L' }
   ];
 
-  /* OCTAVOS DE FINAL (8 partidos) */
+  /* OCTAVOS DE FINAL (8 partidos) — conexiones según el cuadro oficial */
   const R16 = [
-    { n: 89, date: 'Sáb 04/07', time: '18:00', home: 'Gan. 74', away: 'Gan. 77' },
-    { n: 90, date: 'Sáb 04/07', time: '14:00', home: 'Gan. 73', away: 'Gan. 75' },
-    { n: 91, date: 'Dom 05/07', time: '17:00', home: 'Gan. 76', away: 'Gan. 78' },
+    { n: 89, date: 'Sáb 04/07', time: '18:00', home: 'Gan. 75', away: 'Gan. 78' },
+    { n: 90, date: 'Sáb 04/07', time: '14:00', home: 'Gan. 73', away: 'Gan. 76' },
+    { n: 91, date: 'Dom 05/07', time: '17:00', home: 'Gan. 74', away: 'Gan. 77' },
     { n: 92, date: 'Dom 05/07', time: '21:00', home: 'Gan. 79', away: 'Gan. 80' },
     { n: 93, date: 'Lun 06/07', time: '16:00', home: 'Gan. 83', away: 'Gan. 84' },
     { n: 94, date: 'Lun 06/07', time: '21:00', home: 'Gan. 81', away: 'Gan. 82' },
-    { n: 95, date: 'Mar 07/07', time: '13:00', home: 'Gan. 86', away: 'Gan. 88' },
-    { n: 96, date: 'Mar 07/07', time: '16:00', home: 'Gan. 85', away: 'Gan. 87' }
+    { n: 95, date: 'Mar 07/07', time: '13:00', home: 'Gan. 86', away: 'Gan. 87' },
+    { n: 96, date: 'Mar 07/07', time: '16:00', home: 'Gan. 85', away: 'Gan. 88' }
   ];
 
   /* CUARTOS DE FINAL (4 partidos) */
